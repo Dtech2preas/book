@@ -7,11 +7,11 @@
     <style>
         :root {
             /* DTech Blue & Black Theme */
-            --primary-color: #00D2FF; /* Cool Tech Blue / Cyan */
+            --primary-color: #00D2FF;
             --primary-hover: #00B4D8;
-            --secondary-color: #E0E0E0; /* Light Text */
-            --bg-color: #121212; /* Black/Dark Grey */
-            --card-bg: #1E1E1E; /* Slightly lighter black */
+            --secondary-color: #E0E0E0;
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
             --border-color: #333333;
         }
         body {
@@ -25,7 +25,7 @@
             min-height: 100vh;
         }
         header {
-            background-color: #000000;
+            background-color: #000;
             color: var(--primary-color);
             padding: 1rem 2rem;
             text-align: center;
@@ -42,7 +42,7 @@
             margin-bottom: 0.5rem;
         }
         .header-logo {
-            height: 50px; /* Adjust as needed */
+            height: 50px;
             margin-right: 15px;
             object-fit: contain;
         }
@@ -57,8 +57,18 @@
             color: #ccc;
             margin: 0.5rem 0 0;
         }
+        .nav-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        .nav-links a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 2rem auto;
             padding: 0 1rem;
             flex: 1;
@@ -67,14 +77,14 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Darker shadow */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             padding: 2rem;
             margin-bottom: 2rem;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .section:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); /* Blue glow on hover */
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
             border-color: var(--primary-color);
         }
         h2 {
@@ -110,7 +120,7 @@
             color: var(--primary-hover);
         }
         footer {
-            background-color: #000000;
+            background-color: #000;
             color: #888;
             text-align: center;
             padding: 1.5rem;
@@ -133,9 +143,9 @@
         <h1>DTECH</h1>
     </div>
     <p>The Student Marketplace</p>
-    <div style="margin-top: 10px;">
-        <a href="index.html" style="color: var(--primary-color); text-decoration: none; margin: 0 10px;">Home</a>
-        <a href="services.html" style="color: var(--primary-color); text-decoration: none; margin: 0 10px;">Sell Books</a>
+    <div class="nav-links" style="margin-top:10px;">
+        <a href="index.html">Home</a>
+        <a href="services.html">Sell Books</a>
     </div>
 </header>
 
@@ -145,22 +155,47 @@
     <div class="section">
         <h2>About DTECH Book Exchange</h2>
         <p>
-            DTECH Book Exchange is a student-focused platform designed to make buying and selling textbooks easier.
-            Instead of scrolling through endless group chats, students can view all available books in one organized place.
-            Each listing includes the book details, price, and direct contact information, allowing buyers and sellers to
-            connect quickly and conveniently. Our goal is to simplify the process and create a better experience for students.
+            The DTECH Book Exchange is a student-centered platform that makes buying and selling textbooks
+            simple and convenient. Instead of sifting through scattered group chats, students can explore all available
+            textbooks in one organized space. Each listing provides clear book details, pricing, and direct contact
+            information, enabling fast, easy connections between buyers and sellers. Our goal is to save time,
+            reduce frustration, and make the experience smooth for all students.
+        </p>
+        <p>
+            The platform is open to all students and encourages peer-to-peer interaction. Whether you’re selling old
+            textbooks or looking for the next semester’s materials, DTECH Book Exchange is designed to make the process
+            straightforward, transparent, and reliable.
         </p>
 
         <div class="ecosystem-highlight">
-            <p style="margin: 0; color: #fff;">
-                DTECH is an online ecosystem run by an entity called PREASX24.
+            <p style="margin:0; color:#fff;">
+                DTECH is part of a larger student-focused tech ecosystem run by <strong>PREASX24</strong>.
+                This ecosystem includes multiple projects aimed at supporting learners and young creators:
             </p>
+            <ul style="margin-top:1rem; line-height:1.5;">
+                <li><strong>www.dtech-services.co.za</strong> – Main hub for all DTECH projects and services.</li>
+                <li><strong>www.preasx24.co.za</strong> – High-school resources, past papers, notes, quizzes, and university guidance.</li>
+                <li><strong>books.dtech-services.co.za</strong> – Open student marketplace for buying and selling textbooks.</li>
+                <li><strong>student.dtech-services.co.za</strong> – Work-in-progress student support platform for financial assistance (coming soon).</li>
+                <li><strong>apps.dtech-services.co.za</strong> – Collection of free apps designed for students and general users.</li>
+            </ul>
+            <p style="margin-top:1rem;">All projects are created and maintained by a single developer, <strong>PREASX24</strong>, with the goal of making technology accessible, practical, and empowering for students.</p>
         </div>
+
+        <p>
+            Through this ecosystem, DTECH strives to bridge the gap between education, technology, and student needs,
+            offering free and easy-to-use resources that help learners succeed academically and access tools that
+            would otherwise require costly subscriptions.
+        </p>
+
+        <p>
+            Join the DTECH community today and explore how technology can make student life easier, smarter, and more connected.
+        </p>
     </div>
 </div>
 
 <footer>
-    DTECH empowering the youth through digital innovation<br>
+    DTECH – Empowering the youth through digital innovation<br>
     <span>&copy; 2026 DTECH</span>
 </footer>
 
