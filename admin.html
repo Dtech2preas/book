@@ -123,6 +123,11 @@
         </div>
 
         <div class="form-group">
+            <label for="author">Author</label>
+            <input type="text" id="author" required placeholder="e.g. J.K. Rowling">
+        </div>
+
+        <div class="form-group">
             <label for="price">Price (e.g. R250)</label>
             <input type="text" id="price" required placeholder="R250">
         </div>
@@ -186,6 +191,7 @@
 
         const password = document.getElementById('password').value;
         const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
         const price = document.getElementById('price').value;
         const seller = document.getElementById('seller').value;
         const contact = document.getElementById('contact').value;
@@ -214,6 +220,7 @@
 
             const payload = {
                 title,
+                author,
                 price,
                 seller,
                 contact,
