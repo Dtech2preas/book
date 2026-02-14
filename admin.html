@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Add Book</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         :root {
             /* DTech Blue & Black Theme */
@@ -51,7 +53,7 @@
             text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 2rem auto;
             padding: 2rem;
             background-color: var(--card-bg);
@@ -155,6 +157,109 @@
         small {
             color: #888;
         }
+
+        /* Cropper Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+        }
+        .modal-content {
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .modal-buttons {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .img-container {
+            max-height: 500px;
+            display: flex;
+            justify-content: center;
+        }
+        .img-container img {
+            max-width: 100%;
+        }
+
+        /* Book List Styles */
+        .book-list-container {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .search-bar {
+            margin-bottom: 1.5rem;
+        }
+        .book-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .book-item {
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .book-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            background-color: #000;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .book-item h3 {
+            margin: 0.5rem 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        .book-item p {
+            margin: 0.3rem 0;
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+        .book-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .book-actions button {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .btn-delete {
+            background-color: #d32f2f;
+            color: white;
+        }
+        .btn-delete:hover {
+            background-color: #b71c1c;
+        }
+        .btn-edit {
+            background-color: #fbc02d;
+            color: black;
+        }
+        .btn-edit:hover {
+            background-color: #f9a825;
+        }
     </style>
 </head>
 <body>
@@ -162,17 +267,19 @@
 <header>
     <div class="header-logo-container">
         <img src="logo.png" alt="DTech Logo" class="header-logo">
-        <h1>Add New Book</h1>
+        <h1>Admin Panel</h1>
     </div>
 </header>
 
 <div class="container">
-    <h2>Enter Book Details</h2>
+    <h2 id="form-title">Add New Book</h2>
     <form id="add-book-form">
         <div class="form-group">
             <label for="password">Admin Password</label>
             <input type="password" id="password" required placeholder="Enter admin password">
         </div>
+
+        <input type="hidden" id="book-id"> <!-- Hidden field for Book ID when editing -->
 
         <div class="form-group">
             <label for="title">Book Title</label>
@@ -202,16 +309,45 @@
 
         <div class="form-group">
             <label for="image">Book Image</label>
-            <input type="file" id="image" accept="image/*" required>
+            <input type="file" id="image" accept="image/*">
             <div class="preview">
                 <img id="image-preview" src="#" alt="Image Preview">
             </div>
+            <!-- Hidden input to store base64 image data -->
+            <input type="hidden" id="image-base64">
         </div>
 
         <button type="submit" id="submit-btn">Upload Book</button>
+        <button type="button" id="cancel-edit-btn" style="display:none; margin-top: 1rem; background-color: #555; color: white;">Cancel Edit</button>
     </form>
 
     <div id="message" class="message"></div>
+
+    <div class="book-list-container">
+        <h2>Saved Books</h2>
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search by title, author, or seller...">
+        </div>
+        <button id="load-books-btn" style="margin-bottom: 1rem;">Load/Refresh Books</button>
+        <div id="book-list" class="book-list">
+            <!-- Books will be loaded here -->
+            <p style="text-align: center; color: #777;">No books loaded. Click "Load/Refresh Books" to view.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper Modal -->
+<div id="cropper-modal" class="modal">
+    <div class="modal-content">
+        <h2>Crop Image</h2>
+        <div class="img-container">
+            <img id="cropper-image" src="">
+        </div>
+        <div class="modal-buttons">
+            <button id="crop-cancel" style="background-color: #555; color: #fff;">Cancel</button>
+            <button id="crop-confirm">Crop & Save</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -219,23 +355,84 @@
     const form = document.getElementById('add-book-form');
     const imageInput = document.getElementById('image');
     const imagePreview = document.getElementById('image-preview');
+    const imageBase64Input = document.getElementById('image-base64');
     const messageDiv = document.getElementById('message');
     const submitBtn = document.getElementById('submit-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const formTitle = document.getElementById('form-title');
+    const bookIdInput = document.getElementById('book-id');
 
-    // Image preview
-    imageInput.addEventListener('change', function() {
-        const file = this.files[0];
+    // Cropper elements
+    const cropperModal = document.getElementById('cropper-modal');
+    const cropperImage = document.getElementById('cropper-image');
+    const cropCancelBtn = document.getElementById('crop-cancel');
+    const cropConfirmBtn = document.getElementById('crop-confirm');
+    let cropper;
+
+    // Book List elements
+    const loadBooksBtn = document.getElementById('load-books-btn');
+    const bookListDiv = document.getElementById('book-list');
+    const searchInput = document.getElementById('search-input');
+
+    // Store books locally for search
+    let allBooks = [];
+
+    // --- Image Cropping Logic ---
+
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-                imagePreview.style.display = 'inline-block';
+            reader.onload = function(evt) {
+                cropperImage.src = evt.target.result;
+                cropperModal.style.display = 'block';
+
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: NaN, // Free form
+                    viewMode: 1,
+                });
             }
             reader.readAsDataURL(file);
-        } else {
-            imagePreview.style.display = 'none';
+            // Clear input so same file can be selected again if needed
+            imageInput.value = '';
         }
     });
+
+    cropCancelBtn.addEventListener('click', function() {
+        cropperModal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    });
+
+    cropConfirmBtn.addEventListener('click', function() {
+        if (cropper) {
+            // Get cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                maxWidth: 800,
+                maxHeight: 800,
+            });
+
+            // Convert to Base64 (JPEG for better compression)
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Set preview and hidden input
+            imagePreview.src = base64Image;
+            imagePreview.style.display = 'inline-block';
+            imageBase64Input.value = base64Image;
+
+            // Close modal
+            cropperModal.style.display = 'none';
+            cropper.destroy();
+            cropper = null;
+        }
+    });
+
+    // --- Form Submission (Add & Update) ---
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -244,86 +441,239 @@
         messageDiv.style.display = 'none';
         messageDiv.className = 'message';
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Uploading...';
+
+        const isEditMode = !!bookIdInput.value;
+        submitBtn.textContent = isEditMode ? 'Updating...' : 'Uploading...';
 
         const password = document.getElementById('password').value;
+        if(password) sessionStorage.setItem('adminPassword', password);
+
         const title = document.getElementById('title').value;
         const author = document.getElementById('author').value;
         const price = document.getElementById('price').value;
         const seller = document.getElementById('seller').value;
         const contact = document.getElementById('contact').value;
-        const file = imageInput.files[0];
+        const base64Image = imageBase64Input.value;
 
-        if (!file) {
-            showMessage('Please select an image.', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Upload Book';
+        if (!base64Image && !isEditMode) {
+            showMessage('Please select and crop an image.', 'error');
+            resetSubmitBtn(isEditMode);
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            showMessage('File is too large (max 5MB). Please upload a smaller image.', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Upload Book';
-            return;
+        const payload = {
+            title,
+            author,
+            price,
+            seller,
+            contact,
+            image: base64Image // Might be empty if editing and not changed, handled in worker? No, we should probably send it if we have it.
+        };
+
+        // If editing and image is empty, we might need to handle keeping the old image.
+        // My worker implementation expects an image.
+        // Logic: If editing and no new image, don't send image field? Or send existing?
+        // Let's assume for now user must re-upload image or I need to fetch it to pre-fill (which I don't do).
+        // Actually, if I populate the form for edit, I should probably put the existing image into imageBase64Input.
+
+        // Validation for image
+        if (!payload.image && isEditMode) {
+             // If payload.image is empty but we are in edit mode, it means user didn't change image.
+             // We need to ensure we send the existing image back, OR modify worker to accept partial updates.
+             // My worker replaces the whole object. So we MUST send the image.
+             // When "Edit" is clicked, I will put the existing image into imageBase64Input.
         }
 
-        // Convert image to Base64
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
+        let url = WORKER_URL;
+        let method = 'POST';
 
-        reader.onload = async function() {
-            const base64Image = reader.result; // This includes "data:image/png;base64,..."
+        if (isEditMode) {
+            url += `?id=${bookIdInput.value}`;
+            method = 'PUT';
+        }
 
-            const payload = {
-                title,
-                author,
-                price,
-                seller,
-                contact,
-                image: base64Image
-            };
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Password': password
+                },
+                body: JSON.stringify(payload)
+            });
 
-            try {
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Admin-Password': password
-                    },
-                    body: JSON.stringify(payload)
-                });
+            const result = await response.json();
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage('Book added successfully!', 'success');
-                    form.reset();
-                    imagePreview.style.display = 'none';
-                } else {
-                    showMessage(result.error || 'Failed to add book.', 'error');
-                }
-            } catch (err) {
-                console.error(err);
-                showMessage('Network error. Please try again.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Upload Book';
+            if (response.ok) {
+                showMessage(isEditMode ? 'Book updated successfully!' : 'Book added successfully!', 'success');
+                resetForm();
+                loadBooks(); // Refresh list
+            } else {
+                showMessage(result.error || 'Operation failed.', 'error');
             }
-        };
-
-        reader.onerror = function() {
-            showMessage('Error reading file.', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Upload Book';
-        };
+        } catch (err) {
+            console.error(err);
+            showMessage('Network error. Please try again.', 'error');
+        } finally {
+            resetSubmitBtn(isEditMode);
+        }
     });
+
+    function resetSubmitBtn(isEditMode) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isEditMode ? 'Update Book' : 'Upload Book';
+    }
+
+    function resetForm() {
+        form.reset();
+        bookIdInput.value = '';
+        imagePreview.style.display = 'none';
+        imageBase64Input.value = '';
+        formTitle.textContent = 'Add New Book';
+        submitBtn.textContent = 'Upload Book';
+        cancelEditBtn.style.display = 'none';
+
+        // Auto-fill password if available
+        const savedPass = sessionStorage.getItem('adminPassword');
+        if(savedPass) document.getElementById('password').value = savedPass;
+    }
+
+    cancelEditBtn.addEventListener('click', resetForm);
 
     function showMessage(text, type) {
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
         messageDiv.style.display = 'block';
     }
+
+    // --- Book List Logic ---
+
+    // Auto-fill password on load
+    const savedPass = sessionStorage.getItem('adminPassword');
+    if(savedPass) document.getElementById('password').value = savedPass;
+
+    loadBooksBtn.addEventListener('click', loadBooks);
+
+    async function loadBooks() {
+        loadBooksBtn.textContent = 'Loading...';
+        loadBooksBtn.disabled = true;
+
+        try {
+            const response = await fetch(WORKER_URL); // GET request
+            if (response.ok) {
+                allBooks = await response.json();
+                renderBooks(allBooks);
+            } else {
+                alert('Failed to load books.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error loading books.');
+        } finally {
+            loadBooksBtn.textContent = 'Load/Refresh Books';
+            loadBooksBtn.disabled = false;
+        }
+    }
+
+    function renderBooks(books) {
+        bookListDiv.innerHTML = '';
+        if (books.length === 0) {
+            bookListDiv.innerHTML = '<p style="text-align: center; color: #777;">No books found.</p>';
+            return;
+        }
+
+        books.forEach(book => {
+            const div = document.createElement('div');
+            div.className = 'book-item';
+            div.innerHTML = `
+                <img src="${book.image}" alt="${book.title}">
+                <h3>${book.title}</h3>
+                <p><strong>Author:</strong> ${book.author}</p>
+                <p><strong>Price:</strong> ${book.price}</p>
+                <p><strong>Seller:</strong> ${book.seller}</p>
+                <div class="book-actions">
+                    <button class="btn-edit" onclick="editBook('${book.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteBook('${book.id}')">Delete</button>
+                </div>
+            `;
+            bookListDiv.appendChild(div);
+        });
+    }
+
+    // Search Filter
+    searchInput.addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        const filtered = allBooks.filter(book =>
+            book.title.toLowerCase().includes(term) ||
+            book.author.toLowerCase().includes(term) ||
+            book.seller.toLowerCase().includes(term)
+        );
+        renderBooks(filtered);
+    });
+
+    // Delete Function
+    window.deleteBook = async function(id) {
+        if (!confirm('Are you sure you want to delete this book?')) return;
+
+        const password = document.getElementById('password').value;
+        if (!password) {
+            alert('Please enter the Admin Password in the form above first.');
+            document.getElementById('password').focus();
+            return;
+        }
+
+        // Save password
+        sessionStorage.setItem('adminPassword', password);
+
+        try {
+            const response = await fetch(`${WORKER_URL}?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Admin-Password': password
+                }
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Book deleted successfully');
+                loadBooks(); // Refresh list
+            } else {
+                alert(result.error || 'Failed to delete book');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+        }
+    };
+
+    // Edit Function
+    window.editBook = function(id) {
+        const book = allBooks.find(b => b.id === id);
+        if (!book) return;
+
+        // Populate form
+        document.getElementById('title').value = book.title;
+        document.getElementById('author').value = book.author;
+        document.getElementById('price').value = book.price;
+        document.getElementById('seller').value = book.seller;
+        document.getElementById('contact').value = book.contact || '';
+
+        bookIdInput.value = book.id;
+
+        // Handle Image
+        imagePreview.src = book.image;
+        imagePreview.style.display = 'inline-block';
+        imageBase64Input.value = book.image;
+
+        // Change UI state
+        formTitle.textContent = 'Edit Book';
+        submitBtn.textContent = 'Update Book';
+        cancelEditBtn.style.display = 'inline-block';
+
+        // Scroll to form
+        document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+    };
+
 </script>
 
 </body>
