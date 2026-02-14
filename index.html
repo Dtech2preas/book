@@ -1,1 +1,231 @@
-v
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Hooks - Find Your Next Read</title>
+    <style>
+        :root {
+            --primary-color: #25D366; /* WhatsApp Green */
+            --secondary-color: #333;
+            --bg-color: #f4f4f4;
+            --card-bg: #fff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--secondary-color);
+        }
+        header {
+            background-color: var(--secondary-color);
+            color: #fff;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .search-bar {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .search-bar input {
+            padding: 0.8rem;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        .book-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .book-card:hover {
+            transform: translateY(-5px);
+        }
+        .book-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+        .book-details {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .book-title {
+            font-size: 1.25rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: bold;
+        }
+        .book-price {
+            font-size: 1.1rem;
+            color: #e91e63;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .book-seller {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .contact-btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: auto;
+            transition: background-color 0.2s;
+        }
+        .contact-btn:hover {
+            background-color: #128C7E;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📚 Book Hooks</h1>
+    <p>Buy and Sell Textbooks Easily</p>
+</header>
+
+<div class="container">
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search books by name...">
+    </div>
+
+    <div id="books-container" class="books-grid">
+        <!-- Books will be injected here -->
+    </div>
+    <div id="loading-message" class="loading">Loading books...</div>
+    <div id="error-message" class="error" style="display: none;"></div>
+</div>
+
+<script>
+    const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
+    let allBooks = [];
+
+    const container = document.getElementById('books-container');
+    const loadingMsg = document.getElementById('loading-message');
+    const errorMsg = document.getElementById('error-message');
+    const searchInput = document.getElementById('search-input');
+
+    async function fetchBooks() {
+        try {
+            const response = await fetch(WORKER_URL);
+            if (!response.ok) {
+                throw new Error('Failed to fetch books');
+            }
+            const data = await response.json();
+            allBooks = data;
+            renderBooks(allBooks);
+            loadingMsg.style.display = 'none';
+        } catch (err) {
+            console.error(err);
+            loadingMsg.style.display = 'none';
+            errorMsg.textContent = 'Could not load books. Please try again later.';
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    function renderBooks(books) {
+        container.innerHTML = '';
+        if (books.length === 0) {
+            container.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No books found.</p>';
+            return;
+        }
+
+        books.forEach(book => {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+
+            // WhatsApp Link
+            // Remove non-numeric characters for the link
+            const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
+            const whatsappLink = phone ? `https://wa.me/${phone}` : null;
+
+            let contactButtonHtml = '';
+            if (whatsappLink) {
+                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">Contact Seller on WhatsApp</a>`;
+            } else {
+                contactButtonHtml = `<span class="contact-btn" style="background-color: #ccc; cursor: not-allowed;">No Contact Info</span>`;
+            }
+
+            const imgSrc = book.image || 'https://via.placeholder.com/300x250?text=No+Image';
+
+            card.innerHTML = `
+                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image">
+                <div class="book-details">
+                    <h2 class="book-title">${escapeHtml(book.title)}</h2>
+                    <div class="book-price">${escapeHtml(book.price)}</div>
+                    <div class="book-seller">Seller: ${escapeHtml(book.seller)}</div>
+                    ${contactButtonHtml}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Search functionality
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = allBooks.filter(book =>
+            book.title.toLowerCase().includes(query) ||
+            (book.seller && book.seller.toLowerCase().includes(query))
+        );
+        renderBooks(filtered);
+    });
+
+    // Helper to prevent XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Initial fetch
+    fetchBooks();
+
+</script>
+
+</body>
+</html>
