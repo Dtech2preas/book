@@ -122,11 +122,12 @@
 <header>
     <h1>📚 Book Hooks</h1>
     <p>Buy and Sell Textbooks Easily</p>
+    <a href="services.html" style="color: white; text-decoration: underline; font-weight: bold; margin-top: 10px; display: inline-block;">Sell Your Book / Services</a>
 </header>
 
 <div class="container">
     <div class="search-bar">
-        <input type="text" id="search-input" placeholder="Search books by name...">
+        <input type="text" id="search-input" placeholder="Search books by title, author, or seller...">
     </div>
 
     <div id="books-container" class="books-grid">
@@ -177,7 +178,12 @@
             // WhatsApp Link
             // Remove non-numeric characters for the link
             const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
-            const whatsappLink = phone ? `https://wa.me/${phone}` : null;
+
+            // Prefilled message: Hello, I am interested in buying "[Title]" by [Author] listed for [Price] on the dtech website.
+            const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+            const encodedMessage = encodeURIComponent(message);
+
+            const whatsappLink = phone ? `https://wa.me/${phone}?text=${encodedMessage}` : null;
 
             let contactButtonHtml = '';
             if (whatsappLink) {
@@ -192,6 +198,7 @@
                 <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image">
                 <div class="book-details">
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
+                    <div style="margin-bottom: 0.5rem; font-style: italic;">By ${escapeHtml(book.author || 'Unknown Author')}</div>
                     <div class="book-price">${escapeHtml(book.price)}</div>
                     <div class="book-seller">Seller: ${escapeHtml(book.seller)}</div>
                     ${contactButtonHtml}
@@ -206,7 +213,8 @@
         const query = e.target.value.toLowerCase();
         const filtered = allBooks.filter(book =>
             book.title.toLowerCase().includes(query) ||
-            (book.seller && book.seller.toLowerCase().includes(query))
+            (book.seller && book.seller.toLowerCase().includes(query)) ||
+            (book.author && book.author.toLowerCase().includes(query))
         );
         renderBooks(filtered);
     });

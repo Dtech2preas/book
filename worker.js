@@ -58,7 +58,7 @@ async function handleRequest(request) {
       const body = await request.json();
 
       // Validation
-      if (!body.title || !body.price || !body.image) {
+      if (!body.title || !body.author || !body.price || !body.image) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers });
       }
 
@@ -67,6 +67,7 @@ async function handleRequest(request) {
 
       const bookData = {
         title: body.title,
+        author: body.author,
         price: body.price,
         seller: body.seller || "Anonymous",
         contact: body.contact || "",
