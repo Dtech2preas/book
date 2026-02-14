@@ -30,6 +30,14 @@ async function handleRequest(request) {
       // List all keys with prefix "book:"
       const list = await BOOKS_KV.list({ prefix: "book:" });
 
+      // Check if user just wants a version/checksum
+      if (url.searchParams.get("check") === "true") {
+        // Generate a simple signature based on the sorted list of keys
+        const keys = list.keys.map(k => k.name).sort();
+        const signature = JSON.stringify(keys);
+        return new Response(JSON.stringify({ signature: signature }), { headers });
+      }
+
       // Fetch the content for each book
       // Note: In a production app with many items, you'd want pagination or separate image fetching.
       // Here we fetch all at once for simplicity as requested.
