@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Hooks - Find Your Next Read</title>
+    <title>DTECH - Student Marketplace</title>
+    <meta name="description" content="DTECH Book Exchange - A student-focused platform for buying and selling textbooks. Part of the PREASX24 online ecosystem.">
+    <meta name="keywords" content="entrepreneurs, books, text books, market, student marketplace, DTECH, PREASX24">
     <style>
         :root {
             /* DTech Blue & Black Theme */
@@ -225,6 +227,20 @@
                 width: 100%;
             }
         }
+        footer {
+            background-color: #000000;
+            color: #888;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border-top: 1px solid #333;
+            font-size: 0.9rem;
+        }
+        footer span {
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -232,10 +248,13 @@
 <header>
     <div class="header-logo-container">
         <img src="logo.png" alt="DTech Logo" class="header-logo">
-        <h1>D-TECH</h1>
+        <h1>DTECH</h1>
     </div>
-    <p>buy ° sell books</p>
-    <a href="services.html" style="color: var(--primary-color); text-decoration: none; font-weight: bold; margin-top: 10px; display: inline-block; border-bottom: 1px dashed var(--primary-color);">Sell Your Books</a>
+    <p>The Student Marketplace</p>
+    <div style="margin-top: 10px;">
+        <a href="services.html" style="color: var(--primary-color); text-decoration: none; font-weight: bold; margin: 0 10px; border-bottom: 1px dashed var(--primary-color);">Sell Your Books</a>
+        <a href="about.html" style="color: var(--primary-color); text-decoration: none; font-weight: bold; margin: 0 10px; border-bottom: 1px dashed var(--primary-color);">About Us</a>
+    </div>
 </header>
 
 <div class="container">
@@ -260,6 +279,11 @@
     <span class="close" onclick="closeModal()">&times;</span>
     <img class="modal-content" id="img01">
 </div>
+
+<footer>
+    DTECH empowering the youth through digital innovation<br>
+    <span>&copy; 2026 DTECH</span>
+</footer>
 
 <script>
     const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
