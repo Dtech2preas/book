@@ -27,23 +27,64 @@ async function handleRequest(request) {
 
   if (request.method === 'GET') {
     try {
+      // 1. Image Endpoint: /image?id=...
+      if (url.pathname === '/image') {
+        const id = url.searchParams.get("id");
+        if (!id) {
+          return new Response("Missing ID", { status: 400 });
+        }
+        const book = await BOOKS_KV.get(id, { type: "json" });
+        if (!book || !book.image) {
+          return new Response("Image not found", { status: 404 });
+        }
+
+        // Extract Base64
+        const matches = book.image.match(/^data:(.+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+          return new Response("Invalid image data", { status: 500 });
+        }
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+
+        // Decode
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        return new Response(bytes.buffer, {
+          headers: {
+            "Content-Type": mimeType,
+            "Cache-Control": "public, max-age=31536000", // Cache for 1 year
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+
+      // 2. Single Book Endpoint (Full Details): /?id=...
+      const id = url.searchParams.get("id");
+      if (id) {
+        const book = await BOOKS_KV.get(id, { type: "json" });
+        if (!book) {
+          return new Response(JSON.stringify({ error: "Book not found" }), { status: 404, headers });
+        }
+        return new Response(JSON.stringify({ id, ...book }), { headers });
+      }
+
+      // 3. List Endpoint (Lightweight): /
       // List all keys with prefix "book:"
       const list = await BOOKS_KV.list({ prefix: "book:" });
 
-      // Check if user just wants a version/checksum
-      if (url.searchParams.get("check") === "true") {
-        // Generate a simple signature based on the sorted list of keys
-        const keys = list.keys.map(k => k.name).sort();
-        const signature = JSON.stringify(keys);
-        return new Response(JSON.stringify({ signature: signature }), { headers });
-      }
-
-      // Fetch the content for each book
-      // Note: In a production app with many items, you'd want pagination or separate image fetching.
-      // Here we fetch all at once for simplicity as requested.
+      // Fetch the content for each book but exclude the image field
       const books = await Promise.all(list.keys.map(async (key) => {
         const value = await BOOKS_KV.get(key.name, { type: "json" });
-        return value ? { id: key.name, ...value } : null;
+        if (!value) return null;
+
+        // Return object WITHOUT image data to speed up initial load
+        const { image, ...lightweightBook } = value;
+        return { id: key.name, ...lightweightBook };
       }));
 
       // Filter out nulls
