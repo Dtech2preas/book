@@ -362,50 +362,42 @@
 
     async function fetchBooks() {
         try {
-            // Check for updates
-            const checkResponse = await fetch(WORKER_URL + '?check=true');
-            if (!checkResponse.ok) throw new Error("Failed to check for updates");
-            const checkData = await checkResponse.json();
-            const serverSignature = checkData.signature;
+            loadingMsg.style.display = 'block';
 
-            const localSignature = localStorage.getItem('bookSignature');
-            let books = [];
-
-            if (serverSignature === localSignature) {
-                try {
-                    books = await getBooksFromDB();
-                    if (!books || books.length === 0) {
-                         throw new Error("Local DB empty");
-                    }
-                    console.log("Loaded from cache");
-                } catch (e) {
-                    console.log("Cache miss or error, fetching fresh");
-                    const response = await fetch(WORKER_URL);
-                    if (!response.ok) throw new Error('Failed to fetch books');
-                    books = await response.json();
-
-                    await saveBooksToDB(books);
-                    localStorage.setItem('bookSignature', serverSignature);
-                }
-            } else {
-                console.log("New data available, fetching fresh");
+            // Network First Strategy
+            try {
+                // Fetch fresh list (now lightweight, no images)
                 const response = await fetch(WORKER_URL);
                 if (!response.ok) throw new Error('Failed to fetch books');
-                books = await response.json();
+                const books = await response.json();
 
+                // Save to local DB for offline fallback
                 await saveBooksToDB(books);
-                localStorage.setItem('bookSignature', serverSignature);
+                allBooks = books;
+                console.log("Loaded from network");
+            } catch (networkErr) {
+                console.warn("Network failed, trying cache", networkErr);
+                // Fallback to cache
+                const cachedBooks = await getBooksFromDB();
+                if (cachedBooks && cachedBooks.length > 0) {
+                    allBooks = cachedBooks;
+                    console.log("Loaded from cache");
+                } else {
+                    throw networkErr; // Re-throw if no cache
+                }
             }
 
-            allBooks = books;
             sortBooks(); // Apply default sort
             renderBooks(allBooks);
             loadingMsg.style.display = 'none';
         } catch (err) {
             console.error(err);
             loadingMsg.style.display = 'none';
-            errorMsg.textContent = 'Could not load books. Please try again later.';
-            errorMsg.style.display = 'block';
+            // Only show error if we have no books at all
+            if (allBooks.length === 0) {
+                errorMsg.textContent = 'Could not load books. Please try again later.';
+                errorMsg.style.display = 'block';
+            }
         }
     }
 
@@ -433,14 +425,15 @@
                 contactButtonHtml = `<span class="contact-btn" style="background-color: #555; cursor: not-allowed;">No Info</span>`;
             }
 
-            const imgSrc = book.image || 'https://via.placeholder.com/300x250?text=No+Image';
+            // Construct Image URL
+            // If book.image exists (legacy cache), use it. Otherwise use the lazy loading endpoint.
+            const imgSrc = book.image
+                ? book.image
+                : `${WORKER_URL}image?id=${book.id}`;
 
             // Use onclick to open modal, pass the image src
-            // Note: need to escape single quotes in src if any, though unlikely for base64 or standard URLs.
-            // Using a data attribute or closure is safer, but inline onclick is requested style for simplicity here.
-
             card.innerHTML = `
-                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal(this.src)">
+                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal(this.src)" loading="lazy">
                 <div class="book-details">
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
                     <div class="book-author">By ${escapeHtml(book.author || 'Unknown')}</div>

@@ -585,8 +585,12 @@
         books.forEach(book => {
             const div = document.createElement('div');
             div.className = 'book-item';
+
+            // Use lazy loading image endpoint
+            const imgSrc = `${WORKER_URL}image?id=${book.id}`;
+
             div.innerHTML = `
-                <img src="${book.image}" alt="${book.title}">
+                <img src="${imgSrc}" alt="${book.title}" loading="lazy">
                 <h3>${book.title}</h3>
                 <p><strong>Author:</strong> ${book.author}</p>
                 <p><strong>Price:</strong> ${book.price}</p>
@@ -647,31 +651,47 @@
     };
 
     // Edit Function
-    window.editBook = function(id) {
-        const book = allBooks.find(b => b.id === id);
-        if (!book) return;
+    window.editBook = async function(id) {
+        try {
+            submitBtn.textContent = 'Loading...';
+            submitBtn.disabled = true;
 
-        // Populate form
-        document.getElementById('title').value = book.title;
-        document.getElementById('author').value = book.author;
-        document.getElementById('price').value = book.price;
-        document.getElementById('seller').value = book.seller;
-        document.getElementById('contact').value = book.contact || '';
+            // Fetch full book details (including base64 image) from server
+            const response = await fetch(`${WORKER_URL}?id=${id}`);
+            if (!response.ok) {
+                 alert('Failed to load book details');
+                 resetSubmitBtn(false);
+                 return;
+            }
+            const book = await response.json();
 
-        bookIdInput.value = book.id;
+            // Populate form
+            document.getElementById('title').value = book.title;
+            document.getElementById('author').value = book.author;
+            document.getElementById('price').value = book.price;
+            document.getElementById('seller').value = book.seller;
+            document.getElementById('contact').value = book.contact || '';
 
-        // Handle Image
-        imagePreview.src = book.image;
-        imagePreview.style.display = 'inline-block';
-        imageBase64Input.value = book.image;
+            bookIdInput.value = book.id;
 
-        // Change UI state
-        formTitle.textContent = 'Edit Book';
-        submitBtn.textContent = 'Update Book';
-        cancelEditBtn.style.display = 'inline-block';
+            // Handle Image - Populate with the fetched base64 string so editing works as expected
+            imagePreview.src = book.image;
+            imagePreview.style.display = 'inline-block';
+            imageBase64Input.value = book.image;
 
-        // Scroll to form
-        document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+            // Change UI state
+            formTitle.textContent = 'Edit Book';
+            submitBtn.textContent = 'Update Book';
+            submitBtn.disabled = false;
+            cancelEditBtn.style.display = 'inline-block';
+
+            // Scroll to form
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+        } catch(e) {
+            console.error(e);
+            alert("Error fetching book details");
+            resetSubmitBtn(false);
+        }
     };
 
 </script>
