@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Management - DTECH</title>
+    <style>
+        :root {
+            /* DTech Blue & Black Theme */
+            --primary-color: #00D2FF;
+            --primary-hover: #00B4D8;
+            --secondary-color: #E0E0E0;
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --border-color: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #000;
+            color: var(--primary-color);
+            padding: 1rem 2rem;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .header-logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+        .header-logo {
+            height: 50px;
+            margin-right: 15px;
+            object-fit: contain;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: #2a2a2a;
+            color: #fff;
+            text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        .message {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            display: none;
+        }
+        .error {
+            background-color: rgba(114, 28, 36, 0.2);
+            color: #f8d7da;
+            border: 1px solid #721c24;
+        }
+
+        /* Book List Styles */
+        .book-list {
+            margin-top: 2rem;
+            display: grid;
+            gap: 1rem;
+        }
+        .book-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+        .book-item img {
+            width: 60px;
+            height: 80px;
+            object-fit: cover;
+            margin-right: 1rem;
+            border-radius: 4px;
+            background-color: #000;
+        }
+        .book-info {
+            flex-grow: 1;
+        }
+        .book-title {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.2rem;
+        }
+        .book-price {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+        .delete-btn {
+            background-color: #d32f2f;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            width: auto;
+        }
+        .delete-btn:hover {
+            background-color: #b71c1c;
+        }
+        footer {
+            background-color: #000;
+            color: #888;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+            border-top: 1px solid #333;
+            font-size: 0.8rem;
+        }
+        .back-link {
+            display: block;
+            margin-top: 1rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo-container">
+        <img src="logo.png" alt="DTech Logo" class="header-logo">
+        <h1>Seller Portal</h1>
+    </div>
+</header>
+
+<div class="container">
+    <div id="login-section" class="card">
+        <h2>Enter Seller Code</h2>
+        <p style="color: #ccc; font-size: 0.9rem;">Enter the 4-letter code provided to you to manage your books.</p>
+        <form id="login-form">
+            <input type="text" id="seller-code" placeholder="CODE" maxlength="4" required>
+            <button type="submit" id="login-btn">Access My Books</button>
+        </form>
+        <div id="login-message" class="message"></div>
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </div>
+
+    <div id="manage-section" style="display: none;">
+        <div class="card" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+            <span style="font-weight: bold; color: var(--primary-color);">Code: <span id="display-code"></span></span>
+            <button onclick="logout()" style="width: auto; padding: 0.5rem 1rem; background-color: #333; color: #fff;">Logout</button>
+        </div>
+
+        <h2 style="text-align: center;">Your Listed Books</h2>
+        <div id="book-list" class="book-list">
+            <!-- Books injected here -->
+        </div>
+        <p id="no-books-msg" style="text-align: center; color: #777; display: none;">You haven't listed any books yet.</p>
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 DTECH
+</footer>
+
+<script>
+    const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
+    const loginForm = document.getElementById('login-form');
+    const codeInput = document.getElementById('seller-code');
+    const loginMessage = document.getElementById('login-message');
+    const loginBtn = document.getElementById('login-btn');
+
+    const loginSection = document.getElementById('login-section');
+    const manageSection = document.getElementById('manage-section');
+    const displayCode = document.getElementById('display-code');
+    const bookList = document.getElementById('book-list');
+    const noBooksMsg = document.getElementById('no-books-msg');
+
+    // Check session
+    const savedCode = sessionStorage.getItem('sellerCode');
+    if (savedCode) {
+        codeInput.value = savedCode;
+        loadBooks(savedCode);
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = codeInput.value.toUpperCase().trim();
+        if (code.length < 4) {
+            showMessage('Invalid code format.', 'error');
+            return;
+        }
+        await loadBooks(code);
+    });
+
+    async function loadBooks(code) {
+        loginBtn.textContent = 'Verifying...';
+        loginBtn.disabled = true;
+        loginMessage.style.display = 'none';
+
+        try {
+            const response = await fetch(`${WORKER_URL}seller/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem('sellerCode', code);
+                displayCode.textContent = code;
+                renderBooks(data);
+
+                loginSection.style.display = 'none';
+                manageSection.style.display = 'block';
+            } else {
+                showMessage(data.error || 'Invalid code.', 'error');
+                sessionStorage.removeItem('sellerCode');
+            }
+        } catch (err) {
+            console.error(err);
+            showMessage('Network error. Please try again.', 'error');
+        } finally {
+            loginBtn.textContent = 'Access My Books';
+            loginBtn.disabled = false;
+        }
+    }
+
+    function renderBooks(books) {
+        bookList.innerHTML = '';
+        if (!books || books.length === 0) {
+            noBooksMsg.style.display = 'block';
+            return;
+        }
+        noBooksMsg.style.display = 'none';
+
+        books.forEach(book => {
+            const item = document.createElement('div');
+            item.className = 'book-item';
+
+            // Image fallback logic
+            const imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+
+            item.innerHTML = `
+                <img src="${imgSrc}" alt="${book.title}" loading="lazy">
+                <div class="book-info">
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-price">${book.price}</div>
+                </div>
+                <button class="delete-btn" onclick="deleteBook('${book.id}')">Delete</button>
+            `;
+            bookList.appendChild(item);
+        });
+    }
+
+    window.deleteBook = async function(id) {
+        if (!confirm('Are you sure you want to remove this book? This action cannot be undone.')) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            alert('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WORKER_URL}?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Seller-Code': code
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Remove element locally for instant feedback or reload
+                loadBooks(code);
+            } else {
+                alert(result.error || 'Failed to delete book.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+        }
+    };
+
+    window.logout = function() {
+        sessionStorage.removeItem('sellerCode');
+        manageSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        codeInput.value = '';
+        loginMessage.style.display = 'none';
+    };
+
+    function showMessage(text, type) {
+        loginMessage.textContent = text;
+        loginMessage.className = `message ${type}`;
+        loginMessage.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
