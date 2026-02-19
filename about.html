@@ -37,6 +37,31 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
+        }
+        .seller-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .seller-link:hover {
+            transform: scale(1.05);
+            background-color: var(--primary-hover);
+        }
+        .seller-link svg {
+            width: 24px;
+            height: 24px;
+            fill: #000;
         }
         .header-logo-container {
             display: flex;
@@ -141,6 +166,11 @@
 <body>
 
 <header>
+    <a href="seller-manage.html" class="seller-link" title="Seller Management">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+    </a>
     <div class="header-logo-container">
         <img src="logo.png" alt="DTech Logo" class="header-logo">
         <h1>DTECH</h1>

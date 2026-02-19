@@ -81,7 +81,8 @@
         input[type="text"],
         input[type="number"],
         input[type="password"],
-        input[type="file"] {
+        input[type="file"],
+        select {
             width: 100%;
             padding: 0.8rem;
             border: 1px solid var(--border-color);
@@ -93,7 +94,7 @@
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 5px rgba(0, 210, 255, 0.3);
         }
@@ -192,6 +193,30 @@
         }
         .img-container img {
             max-width: 100%;
+        }
+
+        /* Sellers Table */
+        .sellers-container {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .seller-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .seller-table th, .seller-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.8rem;
+            text-align: left;
+        }
+        .seller-table th {
+            background-color: #2a2a2a;
+            color: var(--primary-color);
+        }
+        .seller-table tr:nth-child(even) {
+            background-color: #252525;
         }
 
         /* Book List Styles */
@@ -296,6 +321,14 @@
             <input type="text" id="price" required placeholder="R250">
         </div>
 
+        <!-- NEW: Seller Select -->
+        <div class="form-group">
+            <label for="seller-select">Select Existing Seller (Optional)</label>
+            <select id="seller-select">
+                <option value="">-- New / Manual Entry --</option>
+            </select>
+        </div>
+
         <div class="form-group">
             <label for="seller">Seller Name</label>
             <input type="text" id="seller" required placeholder="Your Name">
@@ -322,6 +355,15 @@
     </form>
 
     <div id="message" class="message"></div>
+
+    <!-- NEW: Sellers Section -->
+    <div class="sellers-container">
+        <h2>Seller Management</h2>
+        <button id="migrate-btn" style="background-color: #555; margin-bottom: 1rem;">Migrate / Refresh Sellers</button>
+        <div id="sellers-list">
+            <p style="text-align: center; color: #777;">Click "Migrate / Refresh" to load sellers.</p>
+        </div>
+    </div>
 
     <div class="book-list-container">
         <h2>Saved Books</h2>
@@ -362,6 +404,11 @@
     const formTitle = document.getElementById('form-title');
     const bookIdInput = document.getElementById('book-id');
 
+    // Seller Select
+    const sellerSelect = document.getElementById('seller-select');
+    const sellerInput = document.getElementById('seller');
+    const contactInput = document.getElementById('contact');
+
     // Cropper elements
     const cropperModal = document.getElementById('cropper-modal');
     const cropperImage = document.getElementById('cropper-image');
@@ -374,8 +421,139 @@
     const bookListDiv = document.getElementById('book-list');
     const searchInput = document.getElementById('search-input');
 
-    // Store books locally for search
+    // Sellers elements
+    const migrateBtn = document.getElementById('migrate-btn');
+    const sellersListDiv = document.getElementById('sellers-list');
+
+    // Store data locally
     let allBooks = [];
+    let sellersData = {};
+
+    // --- Password Persistence ---
+    function loadPassword() {
+        const stored = localStorage.getItem('adminAuth');
+        if (stored) {
+            try {
+                const { password, expiry } = JSON.parse(stored);
+                if (Date.now() < expiry) {
+                    document.getElementById('password').value = password;
+                    return password;
+                } else {
+                    localStorage.removeItem('adminAuth');
+                }
+            } catch (e) {
+                localStorage.removeItem('adminAuth');
+            }
+        }
+        return '';
+    }
+
+    function savePassword(password) {
+        if (!password) return;
+        const expiry = Date.now() + (3 * 24 * 60 * 60 * 1000); // 3 days
+        localStorage.setItem('adminAuth', JSON.stringify({ password, expiry }));
+    }
+
+    // Load password on init
+    loadPassword();
+
+    // --- Sellers Logic ---
+
+    migrateBtn.addEventListener('click', migrateSellers);
+
+    async function migrateSellers() {
+        const password = document.getElementById('password').value;
+        if (!password) { alert('Enter Admin Password'); return; }
+        savePassword(password);
+
+        migrateBtn.textContent = 'Processing...';
+        migrateBtn.disabled = true;
+
+        try {
+            // First, trigger migration/sync
+            const response = await fetch(`${WORKER_URL}admin/migrate`, {
+                method: 'POST',
+                headers: { 'X-Admin-Password': password }
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                sellersData = data.sellers;
+                renderSellers(sellersData);
+                populateSellerSelect(sellersData);
+                alert('Migration/Sync Complete!');
+            } else {
+                alert(data.error || 'Failed to migrate.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error during migration.');
+        } finally {
+            migrateBtn.textContent = 'Migrate / Refresh Sellers';
+            migrateBtn.disabled = false;
+        }
+    }
+
+    // Also try to load sellers without migration if we have them?
+    // Or just separate Load vs Migrate. For now, "Migrate/Refresh" does both via the migrate endpoint which is safe to run repeatedly.
+    // Actually, let's have a separate load function for initial view, but migrate endpoint returns updated list anyway.
+
+    function renderSellers(sellers) {
+        if (!sellers || Object.keys(sellers).length === 0) {
+            sellersListDiv.innerHTML = '<p style="text-align: center; color: #777;">No sellers found.</p>';
+            return;
+        }
+
+        let html = `
+            <table class="seller-table">
+                <thead>
+                    <tr>
+                        <th>Seller Name</th>
+                        <th>WhatsApp</th>
+                        <th>Code</th>
+                        <th>Books</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        Object.values(sellers).forEach(s => {
+            html += `
+                <tr>
+                    <td>${s.name}</td>
+                    <td>${s.contact}</td>
+                    <td style="font-family: monospace; color: var(--primary-color); font-weight: bold;">${s.code}</td>
+                    <td>${s.count}</td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table>';
+        sellersListDiv.innerHTML = html;
+    }
+
+    function populateSellerSelect(sellers) {
+        sellerSelect.innerHTML = '<option value="">-- New / Manual Entry --</option>';
+        Object.values(sellers).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.contact; // Use phone as key
+            opt.textContent = `${s.name} (${s.contact})`;
+            sellerSelect.appendChild(opt);
+        });
+    }
+
+    sellerSelect.addEventListener('change', function() {
+        const contact = this.value;
+        if (contact && sellersData[contact]) {
+            const s = sellersData[contact];
+            sellerInput.value = s.name;
+            contactInput.value = s.contact;
+        } else {
+            // Optional: clear fields or leave them?
+            // Better to leave them so user can edit if they accidentally selected wrong one.
+            // But maybe clear logic is expected. Let's just fill if selected.
+        }
+    });
 
     // --- Image Cropping Logic ---
 
@@ -446,7 +624,7 @@
         submitBtn.textContent = isEditMode ? 'Updating...' : 'Uploading...';
 
         const password = document.getElementById('password').value;
-        if(password) sessionStorage.setItem('adminPassword', password);
+        savePassword(password);
 
         const title = document.getElementById('title').value;
         const author = document.getElementById('author').value;
@@ -467,22 +645,8 @@
             price,
             seller,
             contact,
-            image: base64Image // Might be empty if editing and not changed, handled in worker? No, we should probably send it if we have it.
+            image: base64Image
         };
-
-        // If editing and image is empty, we might need to handle keeping the old image.
-        // My worker implementation expects an image.
-        // Logic: If editing and no new image, don't send image field? Or send existing?
-        // Let's assume for now user must re-upload image or I need to fetch it to pre-fill (which I don't do).
-        // Actually, if I populate the form for edit, I should probably put the existing image into imageBase64Input.
-
-        // Validation for image
-        if (!payload.image && isEditMode) {
-             // If payload.image is empty but we are in edit mode, it means user didn't change image.
-             // We need to ensure we send the existing image back, OR modify worker to accept partial updates.
-             // My worker replaces the whole object. So we MUST send the image.
-             // When "Edit" is clicked, I will put the existing image into imageBase64Input.
-        }
 
         let url = WORKER_URL;
         let method = 'POST';
@@ -506,8 +670,16 @@
 
             if (response.ok) {
                 showMessage(isEditMode ? 'Book updated successfully!' : 'Book added successfully!', 'success');
+                // Also show code if new
+                if (result.code) {
+                    alert(`Book added! Seller Code: ${result.code}`);
+                }
                 resetForm();
                 loadBooks(); // Refresh list
+
+                // Refresh sellers list quietly if possible, or just user clicks refresh
+                // Let's trigger a fetch for sellers if we can
+                fetchSellersOnly(password);
             } else {
                 showMessage(result.error || 'Operation failed.', 'error');
             }
@@ -532,10 +704,9 @@
         formTitle.textContent = 'Add New Book';
         submitBtn.textContent = 'Upload Book';
         cancelEditBtn.style.display = 'none';
+        sellerSelect.value = "";
 
-        // Auto-fill password if available
-        const savedPass = sessionStorage.getItem('adminPassword');
-        if(savedPass) document.getElementById('password').value = savedPass;
+        loadPassword(); // restore password
     }
 
     cancelEditBtn.addEventListener('click', resetForm);
@@ -546,11 +717,21 @@
         messageDiv.style.display = 'block';
     }
 
-    // --- Book List Logic ---
+    // --- Fetch Sellers Helper ---
+    async function fetchSellersOnly(password) {
+        try {
+            const response = await fetch(`${WORKER_URL}sellers`, {
+                headers: { 'X-Admin-Password': password }
+            });
+            if (response.ok) {
+                sellersData = await response.json();
+                renderSellers(sellersData);
+                populateSellerSelect(sellersData);
+            }
+        } catch(e) { console.error(e); }
+    }
 
-    // Auto-fill password on load
-    const savedPass = sessionStorage.getItem('adminPassword');
-    if(savedPass) document.getElementById('password').value = savedPass;
+    // --- Book List Logic ---
 
     loadBooksBtn.addEventListener('click', loadBooks);
 
@@ -626,8 +807,7 @@
             return;
         }
 
-        // Save password
-        sessionStorage.setItem('adminPassword', password);
+        savePassword(password);
 
         try {
             const response = await fetch(`${WORKER_URL}?id=${id}`, {
@@ -641,6 +821,7 @@
             if (response.ok) {
                 alert('Book deleted successfully');
                 loadBooks(); // Refresh list
+                fetchSellersOnly(password); // Refresh counts
             } else {
                 alert(result.error || 'Failed to delete book');
             }
@@ -693,6 +874,10 @@
             resetSubmitBtn(false);
         }
     };
+
+    // Attempt auto-load sellers if password exists
+    const autoPass = loadPassword();
+    if(autoPass) fetchSellersOnly(autoPass);
 
 </script>
 
