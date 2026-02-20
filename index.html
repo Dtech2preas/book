@@ -9,12 +9,11 @@
     <meta name="author" content="Seakwa Jonas Mochebane">
     <style>
         :root {
-            /* DTech Blue & Black Theme */
-            --primary-color: #00D2FF; /* Cool Tech Blue / Cyan */
+            --primary-color: #00D2FF;
             --primary-hover: #00B4D8;
-            --secondary-color: #E0E0E0; /* Light Text */
-            --bg-color: #121212; /* Black/Dark Grey */
-            --card-bg: #1E1E1E; /* Slightly lighter black */
+            --secondary-color: #E0E0E0;
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
             --border-color: #333333;
             --whatsapp-green: #25D366;
         }
@@ -25,64 +24,130 @@
             background-color: var(--bg-color);
             color: var(--secondary-color);
         }
+        /* ----- COMPACT HEADER ----- */
         header {
             background-color: #000000;
             color: var(--primary-color);
-            padding: 1rem 2rem;
-            text-align: center;
+            padding: 0.5rem 1.5rem;  /* reduced padding */
             border-bottom: 2px solid var(--primary-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
         }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            /* no bottom margin */
+        }
+        .header-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-logo {
+            height: 32px;  /* smaller */
+            object-fit: contain;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;  /* smaller */
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 6px rgba(0, 210, 255, 0.5);
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .market-text {
+            color: #ccc;
+            font-size: 0.9rem;  /* smaller */
+            font-weight: 400;
+        }
+        /* Even smaller seller icon */
         .seller-link {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
+            width: 28px;
+            height: 28px;
             background-color: var(--primary-color);
             border-radius: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
-            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 0 6px rgba(0, 210, 255, 0.5);
+            transition: transform 0.2s;
         }
         .seller-link:hover {
             transform: scale(1.05);
             background-color: var(--primary-hover);
         }
         .seller-link svg {
-            width: 24px;
-            height: 24px;
+            width: 16px;  /* smaller */
+            height: 16px;
             fill: #000;
         }
-        .header-logo-container {
+
+        /* Middle row now tightly coupled with top */
+        .header-middle {
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin-bottom: 0.5rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 0.2rem;   /* minimal spacing */
+            padding-top: 0.2rem;
+            border-top: 1px solid #333;
         }
-        .header-logo {
-            height: 50px; /* Adjust as needed */
-            margin-right: 15px;
-            object-fit: contain;
+        /* Counter widget – more compact */
+        .vc-widget {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            background-color: #1a1a1a;
+            padding: 4px 12px;      /* smaller */
+            border-radius: 30px;
+            border: 1px solid #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            gap: 12px;
         }
-        header h1 {
-            margin: 0;
-            font-size: 2rem;
+        .vc-stat {
+            text-align: center;
+        }
+        .vc-label {
+            font-size: 9px;          /* smaller */
+            font-weight: 600;
+            color: #aaa;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            letter-spacing: 0.3px;
         }
-        header p {
-            color: #ccc;
-            margin: 0.5rem 0 0;
+        .vc-count {
+            font-size: 16px;          /* smaller */
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
         }
+        .vc-global .vc-count {
+            color: var(--primary-color);
+        }
+        /* Navigation links – compact */
+        .header-nav {
+            display: flex;
+            gap: 15px;
+        }
+        .header-nav a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;      /* smaller */
+            border-bottom: 1px dashed var(--primary-color);
+            padding-bottom: 1px;
+            transition: color 0.2s;
+        }
+        .header-nav a:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        /* ----- SEARCH BAR (improved) ----- */
         .container {
             max-width: 1200px;
             margin: 2rem auto;
@@ -92,30 +157,49 @@
             margin-bottom: 2rem;
             display: flex;
             justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .search-bar input {
-            padding: 0.8rem;
-            width: 100%;
-            max-width: 500px;
+        .search-bar input,
+        .search-bar select {
+            padding: 0.7rem 1rem;     /* slightly smaller */
             border: 1px solid var(--primary-color);
-            border-radius: 4px; /* Slightly rounded for tech feel */
-            font-size: 1rem;
+            border-radius: 50px;
+            font-size: 0.95rem;
             background-color: var(--card-bg);
             color: #fff;
             outline: none;
-            box-shadow: 0 0 5px rgba(0, 210, 255, 0.2);
+            box-shadow: 0 0 6px rgba(0, 210, 255, 0.2);
+            transition: box-shadow 0.2s;
+        }
+        .search-bar input {
+            flex: 1;
+            min-width: 250px;
+            max-width: 500px;
+        }
+        .search-bar select {
+            width: auto;
+            background-color: #2a2a2a;
+            cursor: pointer;
+        }
+        .search-bar input:focus,
+        .search-bar select:focus {
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            border-color: var(--primary-hover);
         }
         .search-bar input::placeholder {
             color: #888;
         }
+
+        /* Books grid (unchanged) */
         .books-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Force 2 columns on mobile */
-            gap: 1rem; /* Tighter gap for mobile */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
         @media (min-width: 768px) {
             .books-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive for larger screens */
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
                 gap: 2rem;
             }
         }
@@ -123,7 +207,7 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Darker shadow */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             overflow: hidden;
             transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
@@ -132,15 +216,15 @@
         }
         .book-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); /* Blue glow on hover */
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
             border-color: var(--primary-color);
         }
         .book-image {
             width: 100%;
-            height: 200px; /* Consistent height */
+            height: 200px;
             object-fit: cover;
             background-color: #2a2a2a;
-            cursor: pointer; /* Indicate clickable */
+            cursor: pointer;
             transition: opacity 0.2s;
         }
         .book-image:hover {
@@ -157,7 +241,6 @@
             margin: 0 0 0.5rem 0;
             font-weight: bold;
             color: #fff;
-            /* Allow full title */
             overflow-wrap: break-word;
         }
         .book-author {
@@ -165,12 +248,11 @@
             color: #bbb;
             margin-bottom: 0.5rem;
             font-style: italic;
-            /* Allow full author name */
             overflow-wrap: break-word;
         }
         .book-price {
             font-size: 1.1rem;
-            color: var(--primary-color); /* Use theme blue/cyan for price */
+            color: var(--primary-color);
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
@@ -203,11 +285,11 @@
             color: var(--primary-color);
         }
         .error {
-            color: #ff5252; /* Bright red for errors */
+            color: #ff5252;
             text-align: center;
         }
 
-        /* Modal Styles */
+        /* Modal (unchanged) */
         .modal {
             display: none;
             position: fixed;
@@ -272,26 +354,47 @@
 <body>
 
 <header>
-    <a href="seller-manage.html" class="seller-link" title="Seller Management">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
-    </a>
-    <div class="header-logo-container">
-        <img src="logo.png" alt="DTech Logo" class="header-logo">
-        <h1>DTECH</h1>
+    <!-- TOP ROW: logo + text + seller icon -->
+    <div class="header-top">
+        <div class="header-logo-container">
+            <img src="logo.png" alt="DTech Logo" class="header-logo">
+            <h1>DTECH</h1>
+        </div>
+        <div class="header-right">
+            <span class="market-text">The Student Marketplace</span>
+            <a href="seller-manage.html" class="seller-link" title="Seller Management">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </a>
+        </div>
     </div>
-    <p>The Student Marketplace</p>
-    <div style="margin-top: 10px;">
-        <a href="services.html" style="color: var(--primary-color); text-decoration: none; font-weight: bold; margin: 0 10px; border-bottom: 1px dashed var(--primary-color);">Sell Your Books</a>
-        <a href="about.html" style="color: var(--primary-color); text-decoration: none; font-weight: bold; margin: 0 10px; border-bottom: 1px dashed var(--primary-color);">About Us</a>
+
+    <!-- MIDDLE ROW: counter + nav links (tight spacing) -->
+    <div class="header-middle">
+        <!-- Counter widget -->
+        <div class="vc-widget" id="vc-widget">
+            <div class="vc-stat">
+                <div class="vc-label">Page Views</div>
+                <div class="vc-count" id="vc-site-count">-</div>
+            </div>
+            <div class="vc-stat vc-global">
+                <div class="vc-label">Total Views</div>
+                <div class="vc-count" id="vc-global-count">-</div>
+            </div>
+        </div>
+
+        <div class="header-nav">
+            <a href="services.html">Sell Your Books</a>
+            <a href="about.html">About Us</a>
+        </div>
     </div>
 </header>
 
 <div class="container">
     <div class="search-bar">
         <input type="text" id="search-input" placeholder="Search books by title, author, or seller...">
-        <select id="sort-select" style="margin-left: 10px; padding: 0.8rem; border: 1px solid var(--primary-color); border-radius: 4px; background-color: var(--card-bg); color: #fff; outline: none;">
+        <select id="sort-select">
             <option value="newest">Newest First</option>
             <option value="a-z">A-Z</option>
             <option value="z-a">Z-A</option>
@@ -316,11 +419,33 @@
     <span>&copy; 2026 DTECH</span>
 </footer>
 
+<!-- Counter widget script -->
+<script>
+(function() {
+  const WORKER_URL = 'https://your-worker.your-subdomain.workers.dev'; // replace
+  const currentUrl = window.location.hostname;
+  fetch(`${WORKER_URL}?url=${encodeURIComponent(currentUrl)}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(data => {
+      document.getElementById('vc-site-count').innerText = data.site_views;
+      document.getElementById('vc-global-count').innerText = data.total_global_views;
+    })
+    .catch(error => {
+      console.error('Error fetching view counts:', error);
+      document.getElementById('vc-site-count').innerText = '?';
+      document.getElementById('vc-global-count').innerText = '?';
+    });
+})();
+</script>
+
+<!-- Your main script (unchanged) -->
 <script>
     const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
     let allBooks = [];
 
-    // IndexedDB Wrapper
     const DB_NAME = 'BooksDB';
     const STORE_NAME = 'books';
     const DB_VERSION = 1;
@@ -344,13 +469,8 @@
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
-
-            // Clear existing data
             store.clear();
-
-            // Add all books
             books.forEach(book => store.put(book));
-
             tx.oncomplete = () => resolve();
             tx.onerror = (e) => reject(e.target.error);
         });
@@ -374,7 +494,6 @@
     const modal = document.getElementById("imageModal");
     const modalImg = document.getElementById("img01");
 
-    // Modal Functions
     function openModal(src) {
         modal.style.display = "flex";
         modalImg.src = src;
@@ -384,7 +503,6 @@
         modal.style.display = "none";
     }
 
-    // Close modal when clicking outside the image
     window.onclick = function(event) {
         if (event.target == modal) {
             closeModal();
@@ -394,37 +512,29 @@
     async function fetchBooks() {
         try {
             loadingMsg.style.display = 'block';
-
-            // Network First Strategy
             try {
-                // Fetch fresh list (now lightweight, no images)
                 const response = await fetch(WORKER_URL);
                 if (!response.ok) throw new Error('Failed to fetch books');
                 const books = await response.json();
-
-                // Save to local DB for offline fallback
                 await saveBooksToDB(books);
                 allBooks = books;
                 console.log("Loaded from network");
             } catch (networkErr) {
                 console.warn("Network failed, trying cache", networkErr);
-                // Fallback to cache
                 const cachedBooks = await getBooksFromDB();
                 if (cachedBooks && cachedBooks.length > 0) {
                     allBooks = cachedBooks;
                     console.log("Loaded from cache");
                 } else {
-                    throw networkErr; // Re-throw if no cache
+                    throw networkErr;
                 }
             }
-
-            sortBooks(); // Apply default sort
+            sortBooks();
             renderBooks(allBooks);
             loadingMsg.style.display = 'none';
         } catch (err) {
             console.error(err);
             loadingMsg.style.display = 'none';
-            // Only show error if we have no books at all
             if (allBooks.length === 0) {
                 errorMsg.textContent = 'Could not load books. Please try again later.';
                 errorMsg.style.display = 'block';
@@ -442,8 +552,6 @@
         books.forEach(book => {
             const card = document.createElement('div');
             card.className = 'book-card';
-
-            // WhatsApp Link
             const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
             const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
             const encodedMessage = encodeURIComponent(message);
@@ -451,18 +559,15 @@
 
             let contactButtonHtml = '';
             if (whatsappLink) {
-                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">WhatsApp Seller</a>`; // Shortened text for mobile
+                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">WhatsApp Seller</a>`;
             } else {
                 contactButtonHtml = `<span class="contact-btn" style="background-color: #555; cursor: not-allowed;">No Info</span>`;
             }
 
-            // Construct Image URL
-            // If book.image exists (legacy cache), use it. Otherwise use the lazy loading endpoint.
             const imgSrc = book.image
                 ? book.image
                 : `${WORKER_URL}image?id=${book.id}`;
 
-            // Use onclick to open modal, pass the image src
             card.innerHTML = `
                 <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal(this.src)" loading="lazy">
                 <div class="book-details">
@@ -477,17 +582,14 @@
         });
     }
 
-    // Sort & Search
     const sortSelect = document.getElementById('sort-select');
 
     function sortBooks() {
         const criteria = sortSelect.value;
         if (criteria === 'newest') {
-            // Sort by createdAt desc (or ID which has timestamp)
             allBooks.sort((a, b) => {
                 const getTimestamp = (book) => {
                     if (book.createdAt) return new Date(book.createdAt).getTime();
-                    // Extract from ID: book:TIMESTAMP-RANDOM
                     if (book.id && book.id.startsWith('book:')) {
                         const parts = book.id.split(':');
                         if (parts.length > 1) {
@@ -509,10 +611,7 @@
 
     function applyFilterAndSort() {
         const query = searchInput.value.toLowerCase();
-
-        // Ensure array is sorted first
         sortBooks();
-
         const filtered = allBooks.filter(book =>
             book.title.toLowerCase().includes(query) ||
             (book.seller && book.seller.toLowerCase().includes(query)) ||
@@ -524,7 +623,6 @@
     searchInput.addEventListener('input', applyFilterAndSort);
     sortSelect.addEventListener('change', applyFilterAndSort);
 
-    // Helper to prevent XSS
     function escapeHtml(text) {
         if (!text) return '';
         return text
@@ -535,10 +633,7 @@
             .replace(/'/g, "&#039;");
     }
 
-    // Initial fetch
     fetchBooks();
-
 </script>
-
 </body>
 </html>
