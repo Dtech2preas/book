@@ -98,35 +98,66 @@
             padding-top: 0.2rem;
             border-top: 1px solid #333;
         }
-        /* Counter widget – more compact */
-        .vc-widget {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            background-color: #1a1a1a;
-            padding: 4px 12px;      /* smaller */
-            border-radius: 30px;
-            border: 1px solid #333;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            gap: 12px;
-        }
-        .vc-stat {
-            text-align: center;
-        }
-        .vc-label {
-            font-size: 9px;          /* smaller */
+        /* Stats Button */
+        .stats-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .stats-btn:hover {
+            background-color: var(--primary-color);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        /* Stats Modal */
+        .stats-modal-content {
+            background-color: #1a1a1a;
+            margin: auto;
+            padding: 2rem;
+            border: 1px solid var(--primary-color);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+            text-align: center;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .stat-item {
+            background-color: #252525;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.8rem;
             color: #aaa;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .vc-count {
-            font-size: 16px;          /* smaller */
-            font-weight: 700;
-            color: #fff;
-            line-height: 1.2;
-        }
-        .vc-global .vc-count {
-            color: var(--primary-color);
+            letter-spacing: 1px;
+            margin-top: 5px;
         }
         /* Navigation links – compact */
         .header-nav {
@@ -157,8 +188,14 @@
             margin-bottom: 2rem;
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+        }
+        @media (max-width: 600px) {
+            .search-bar {
+                flex-wrap: wrap;
+            }
         }
         .search-bar input,
         .search-bar select {
@@ -372,17 +409,13 @@
 
     <!-- MIDDLE ROW: counter + nav links (tight spacing) -->
     <div class="header-middle">
-        <!-- Counter widget -->
-        <div class="vc-widget" id="vc-widget">
-            <div class="vc-stat">
-                <div class="vc-label">Page Views</div>
-                <div class="vc-count" id="vc-site-count">-</div>
-            </div>
-            <div class="vc-stat vc-global">
-                <div class="vc-label">Total Views</div>
-                <div class="vc-count" id="vc-global-count">-</div>
-            </div>
-        </div>
+        <!-- Stats Button -->
+        <button id="stats-btn" class="stats-btn">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5h-2v12h2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+            </svg>
+            Stats
+        </button>
 
         <div class="header-nav">
             <a href="services.html">Sell Your Books</a>
@@ -414,30 +447,93 @@
     <img class="modal-content" id="img01">
 </div>
 
+<!-- Stats Modal -->
+<div id="statsModal" class="modal">
+    <div class="stats-modal-content">
+        <span class="close" onclick="closeStatsModal()">&times;</span>
+        <h2 style="color: var(--primary-color); margin-top: 0; margin-bottom: 1.5rem;">Marketplace Stats</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-listed">-</div>
+                <div class="stat-label">Books Listed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-sellers">-</div>
+                <div class="stat-label">Active Sellers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-sold">-</div>
+                <div class="stat-label">Books Sold</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-visitors">-</div>
+                <div class="stat-label">Visitors</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <footer>
     DTECH empowering the youth through digital innovation<br>
     <span>&copy; 2026 DTECH</span>
 </footer>
 
-<!-- Counter widget script -->
+<!-- Stats and Visitor Script -->
 <script>
 (function() {
-  const WORKER_URL = 'https://late-salad-779e.lefa4082.workers.dev/'; // replace
+  // Visitor Counter
+  const COUNTER_URL = 'https://late-salad-779e.lefa4082.workers.dev/';
   const currentUrl = window.location.hostname;
-  fetch(`${WORKER_URL}?url=${encodeURIComponent(currentUrl)}`)
+  fetch(`${COUNTER_URL}?url=${encodeURIComponent(currentUrl)}`)
     .then(response => {
       if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
     })
     .then(data => {
-      document.getElementById('vc-site-count').innerText = data.site_views;
-      document.getElementById('vc-global-count').innerText = data.total_global_views;
+      // Update visitor count in stats modal
+      const visitorEl = document.getElementById('stat-visitors');
+      if (visitorEl) visitorEl.innerText = data.site_views;
     })
     .catch(error => {
       console.error('Error fetching view counts:', error);
-      document.getElementById('vc-site-count').innerText = '?';
-      document.getElementById('vc-global-count').innerText = '?';
     });
+
+  // Stats Logic
+  const statsModal = document.getElementById('statsModal');
+  const statsBtn = document.getElementById('stats-btn');
+  const MAIN_WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev';
+
+  window.closeStatsModal = function() {
+      statsModal.style.display = "none";
+  };
+
+  if(statsBtn) {
+      statsBtn.onclick = function() {
+          statsModal.style.display = "block";
+          fetchStats();
+      }
+  }
+
+  // Close stats modal when clicking outside
+  window.addEventListener('click', function(event) {
+      if (event.target == statsModal) {
+          statsModal.style.display = "none";
+      }
+  });
+
+  async function fetchStats() {
+      try {
+          const response = await fetch(`${MAIN_WORKER_URL}/stats`);
+          if (!response.ok) throw new Error("Failed to fetch stats");
+          const data = await response.json();
+
+          document.getElementById('stat-listed').innerText = data.booksListed;
+          document.getElementById('stat-sellers').innerText = data.sellersCount;
+          document.getElementById('stat-sold').innerText = data.sold;
+      } catch (err) {
+          console.error(err);
+      }
+  }
 })();
 </script>
 

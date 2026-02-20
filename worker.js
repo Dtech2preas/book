@@ -100,7 +100,25 @@ async function handleRequest(request) {
         return new Response(JSON.stringify({ id, ...book }), { headers });
       }
 
-      // 4. List Endpoint (Lightweight): /
+      // 4. Stats Endpoint: /stats
+      if (url.pathname === '/stats') {
+        const list = await BOOKS_KV.list({ prefix: "book:" });
+        const booksCount = list.keys.length;
+
+        const sellersMap = await BOOKS_KV.get("system:sellers", { type: "json" });
+        const sellersCount = sellersMap ? Object.keys(sellersMap).length : 0;
+
+        const stats = await BOOKS_KV.get("system:stats", { type: "json" });
+        const soldCount = stats ? (stats.sold || 0) : 0;
+
+        return new Response(JSON.stringify({
+            booksListed: booksCount,
+            sellersCount: sellersCount,
+            sold: soldCount
+        }), { headers });
+      }
+
+      // 5. List Endpoint (Lightweight): /
       // List all keys with prefix "book:"
       const list = await BOOKS_KV.list({ prefix: "book:" });
 
@@ -298,6 +316,12 @@ async function handleRequest(request) {
       }
 
       await BOOKS_KV.delete(id);
+
+      // Increment Sold Count
+      const stats = await BOOKS_KV.get("system:stats", { type: "json" }) || { sold: 0 };
+      stats.sold = (stats.sold || 0) + 1;
+      await BOOKS_KV.put("system:stats", JSON.stringify(stats));
+
       return new Response(JSON.stringify({ success: true, message: "Book deleted" }), { headers });
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
