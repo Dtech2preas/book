@@ -170,9 +170,38 @@
             text-decoration: none;
             font-size: 0.9rem;
         }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+        }
+        .toast {
+            background-color: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 250px;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
+
+<div id="toast-container" class="toast-container"></div>
 
 <header>
     <div class="header-logo-container">
@@ -223,6 +252,18 @@
     const displayCode = document.getElementById('display-code');
     const bookList = document.getElementById('book-list');
     const noBooksMsg = document.getElementById('no-books-msg');
+    const toastContainer = document.getElementById('toast-container');
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
 
     // Check session
     const savedCode = sessionStorage.getItem('sellerCode');
@@ -307,7 +348,7 @@
 
         const code = sessionStorage.getItem('sellerCode');
         if (!code) {
-            alert('Session expired. Please log in again.');
+            showToast('Session expired. Please log in again.');
             logout();
             return;
         }
@@ -323,14 +364,14 @@
             const result = await response.json();
 
             if (response.ok) {
-                // Remove element locally for instant feedback or reload
+                showToast('Book deleted successfully');
                 loadBooks(code);
             } else {
-                alert(result.error || 'Failed to delete book.');
+                showToast(result.error || 'Failed to delete book.');
             }
         } catch (err) {
             console.error(err);
-            alert('Network error.');
+            showToast('Network error.');
         }
     };
 
