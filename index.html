@@ -7,6 +7,13 @@
     <meta name="description" content="DTECH Book Exchange - A student-focused platform for buying and selling textbooks. Part of the DTECH ecosystem.">
     <meta name="keywords" content="entrepreneurs, books, text books, market, student marketplace, DTECH, PREASX24, Seakwa Jonas Mochebane">
     <meta name="author" content="Seakwa Jonas Mochebane">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://books.dtech-services.co.za/">
+    <meta property="og:title" content="DTECH - Student Marketplace">
+    <meta property="og:description" content="Buy and sell textbooks easily with DTECH Book Exchange. connect directly with student sellers.">
+    <meta property="og:image" content="https://books.dtech-services.co.za/logo.png">
+
     <style>
         :root {
             --primary-color: #00D2FF;
@@ -386,6 +393,216 @@
             margin-top: 0.5rem;
             color: var(--primary-color);
         }
+
+        /* --- NEW FEATURES CSS --- */
+
+        /* 1. Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background-color: #1E1E1E;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 280px;
+            animation: slideUp 0.3s ease-out;
+            font-size: 0.95rem;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* 2. Skeleton Loader */
+        .skeleton {
+            background: #2a2a2a;
+            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card {
+            height: 350px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .skeleton-img { width: 100%; height: 200px; flex-shrink: 0; }
+        .skeleton-content { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .skeleton-text { width: 80%; height: 20px; }
+        .skeleton-text-sm { width: 60%; height: 16px; }
+
+        /* 3. Back to Top Button */
+        #back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--primary-color);
+            color: #000;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+            z-index: 1500;
+            transition: transform 0.2s, background-color 0.2s;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border: none;
+        }
+        #back-to-top:hover {
+            transform: scale(1.1);
+            background-color: var(--primary-hover);
+        }
+
+        /* 4. New Badge */
+        .badge-new {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: var(--primary-color);
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+        }
+
+        /* 5. Enhanced Book Modal */
+        /* Overrides existing .modal-content for this specific modal */
+        .book-detail-modal-content {
+            display: flex;
+            flex-wrap: wrap;
+            background: var(--card-bg);
+            max-width: 900px;
+            width: 95%;
+            margin: auto;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 40px rgba(0, 210, 255, 0.2);
+        }
+        .modal-img-container {
+            flex: 1;
+            min-width: 300px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-img-container img {
+            max-width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+        .modal-info {
+            flex: 1;
+            min-width: 300px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 20;
+            line-height: 1;
+        }
+        .modal-close-btn:hover { color: var(--primary-color); }
+
+        .modal-title { font-size: 1.8rem; margin: 0 0 0.5rem 0; color: #fff; }
+        .modal-author { font-size: 1.1rem; color: #ccc; font-style: italic; margin-bottom: 1rem; }
+        .modal-price { font-size: 2rem; color: var(--primary-color); font-weight: bold; margin-bottom: 1.5rem; }
+        .modal-meta { margin-bottom: 2rem; color: #888; font-size: 0.9rem; }
+        .modal-meta p { margin: 5px 0; }
+
+        .modal-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+        .btn-whatsapp { background-color: var(--whatsapp-green); color: #fff; }
+        .btn-whatsapp:hover { background-color: #128C7E; }
+        .btn-share { background-color: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
+        .btn-share:hover { background-color: rgba(0, 210, 255, 0.1); }
+
+        /* Share Button on Card */
+        .card-share-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+        .card-share-btn:hover { background: var(--primary-color); color: #000; }
+        .card-share-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        @media (max-width: 700px) {
+            .book-detail-modal-content {
+                flex-direction: column;
+                max-height: 90vh;
+                overflow-y: auto;
+                top: 5%;
+                transform: none;
+            }
+            .modal-img-container { min-height: 250px; }
+            .modal-info { padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
@@ -441,11 +658,38 @@
     <div id="error-message" class="error" style="display: none;"></div>
 </div>
 
-<!-- The Modal -->
-<div id="imageModal" class="modal">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <img class="modal-content" id="img01">
+<!-- Enhanced Book Detail Modal -->
+<div id="bookDetailModal" class="modal">
+    <div class="book-detail-modal-content">
+        <span class="modal-close-btn" onclick="closeModal()">&times;</span>
+        <div class="modal-img-container">
+            <img id="modal-img" src="" alt="Book Cover">
+        </div>
+        <div class="modal-info">
+            <h2 id="modal-title" class="modal-title">Book Title</h2>
+            <div id="modal-author" class="modal-author">By Author Name</div>
+            <div id="modal-price" class="modal-price">R 0.00</div>
+
+            <div class="modal-meta">
+                <p><strong>Seller:</strong> <span id="modal-seller">-</span></p>
+                <p><strong>Listed:</strong> <span id="modal-date">-</span></p>
+            </div>
+
+            <div class="modal-actions">
+                <a id="modal-whatsapp-btn" href="#" target="_blank" class="action-btn btn-whatsapp">
+                    Contact Seller on WhatsApp
+                </a>
+                <button id="modal-share-btn" class="action-btn btn-share">
+                    Share Book Link
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Components -->
+<div id="toast-container" class="toast-container"></div>
+<button id="back-to-top" title="Back to Top">↑</button>
 
 <!-- Stats Modal -->
 <div id="statsModal" class="modal">
@@ -587,16 +831,120 @@
     const loadingMsg = document.getElementById('loading-message');
     const errorMsg = document.getElementById('error-message');
     const searchInput = document.getElementById('search-input');
-    const modal = document.getElementById("imageModal");
-    const modalImg = document.getElementById("img01");
 
-    function openModal(src) {
-        modal.style.display = "flex";
-        modalImg.src = src;
+    // New Modal Elements
+    const modal = document.getElementById("bookDetailModal");
+    const modalImg = document.getElementById("modal-img");
+    const modalTitle = document.getElementById("modal-title");
+    const modalAuthor = document.getElementById("modal-author");
+    const modalPrice = document.getElementById("modal-price");
+    const modalSeller = document.getElementById("modal-seller");
+    const modalDate = document.getElementById("modal-date");
+    const modalWhatsappBtn = document.getElementById("modal-whatsapp-btn");
+    const modalShareBtn = document.getElementById("modal-share-btn");
+
+    // Toast & BackToTop
+    const toastContainer = document.getElementById('toast-container');
+    const backToTopBtn = document.getElementById('back-to-top');
+
+    // Back to Top Logic
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.style.display = 'flex';
+        } else {
+            backToTopBtn.style.display = 'none';
+        }
+    });
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function showSkeleton() {
+        container.innerHTML = '';
+        for(let i=0; i<8; i++) {
+            const div = document.createElement('div');
+            div.className = 'skeleton-card';
+            div.innerHTML = `
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text-sm"></div>
+                    <div class="skeleton skeleton-text-sm"></div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    function openModal(bookId) {
+        const book = allBooks.find(b => b.id === bookId);
+        if(!book) return;
+
+        modal.style.display = "block";
+
+        // Populate Data
+        const imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+        modalImg.src = imgSrc;
+        modalImg.onerror = function() { this.src = 'https://via.placeholder.com/300x400?text=No+Cover'; };
+
+        modalTitle.innerText = book.title;
+        modalAuthor.innerText = book.author ? `By ${book.author}` : 'Unknown Author';
+        modalPrice.innerText = book.price;
+        modalSeller.innerText = book.seller || 'Anonymous';
+
+        // Date Logic
+        let dateStr = 'Unknown';
+        if (book.createdAt) {
+            dateStr = new Date(book.createdAt).toLocaleDateString();
+        } else if (book.id && book.id.startsWith('book:')) {
+             const parts = book.id.split(':');
+             if (parts.length > 1) {
+                 const sub = parts[1].split('-');
+                 const ts = parseInt(sub[0]);
+                 if (!isNaN(ts)) dateStr = new Date(ts).toLocaleDateString();
+             }
+        }
+        modalDate.innerText = dateStr;
+
+        // WhatsApp
+        const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
+        const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+        if (phone) {
+             modalWhatsappBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+             modalWhatsappBtn.style.display = 'inline-block';
+        } else {
+             modalWhatsappBtn.style.display = 'none';
+        }
+
+        // Share Button Logic
+        modalShareBtn.onclick = () => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('book', book.id);
+            navigator.clipboard.writeText(url.toString()).then(() => {
+                showToast('Link copied to clipboard!');
+            });
+        };
     }
 
     function closeModal() {
         modal.style.display = "none";
+        // Clear param without reload
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('book')) {
+            url.searchParams.delete('book');
+            window.history.replaceState({}, '', url);
+        }
     }
 
     window.onclick = function(event) {
@@ -607,7 +955,8 @@
 
     async function fetchBooks() {
         try {
-            loadingMsg.style.display = 'block';
+            loadingMsg.style.display = 'none';
+            showSkeleton();
             try {
                 const response = await fetch(WORKER_URL);
                 if (!response.ok) throw new Error('Failed to fetch books');
@@ -627,10 +976,17 @@
             }
             sortBooks();
             renderBooks(allBooks);
-            loadingMsg.style.display = 'none';
+
+            // Check Deep Link
+            const params = new URLSearchParams(window.location.search);
+            const bookId = params.get('book');
+            if (bookId) {
+                openModal(bookId);
+            }
+
         } catch (err) {
             console.error(err);
-            loadingMsg.style.display = 'none';
+            container.innerHTML = '';
             if (allBooks.length === 0) {
                 errorMsg.textContent = 'Could not load books. Please try again later.';
                 errorMsg.style.display = 'block';
@@ -645,9 +1001,26 @@
             return;
         }
 
+        const now = Date.now();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
         books.forEach(book => {
             const card = document.createElement('div');
             card.className = 'book-card';
+
+            // New Badge Logic
+            let isNew = false;
+            let ts = 0;
+            if (book.createdAt) ts = new Date(book.createdAt).getTime();
+            else if (book.id && book.id.startsWith('book:')) {
+                const parts = book.id.split(':');
+                if (parts.length > 1) {
+                    const sub = parts[1].split('-');
+                    ts = parseInt(sub[0]);
+                }
+            }
+            if (ts && (now - ts) < SEVEN_DAYS) isNew = true;
+
             const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
             const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
             const encodedMessage = encodeURIComponent(message);
@@ -664,8 +1037,20 @@
                 ? book.image
                 : `${WORKER_URL}image?id=${book.id}`;
 
+            // Share Button
+            const shareBtnHtml = `
+                <button class="card-share-btn" onclick="shareBook('${book.id}', event)" title="Share Book">
+                    <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                </button>
+            `;
+
+            // New Badge HTML
+            const badgeHtml = isNew ? `<span class="badge-new">NEW</span>` : '';
+
             card.innerHTML = `
-                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal(this.src)" loading="lazy">
+                ${badgeHtml}
+                ${shareBtnHtml}
+                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal('${book.id}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
                 <div class="book-details">
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
                     <div class="book-author">By ${escapeHtml(book.author || 'Unknown')}</div>
@@ -675,6 +1060,16 @@
                 </div>
             `;
             container.appendChild(card);
+        });
+    }
+
+    // Share Helper
+    window.shareBook = function(id, event) {
+        event.stopPropagation(); // Prevent opening modal
+        const url = new URL(window.location.href);
+        url.searchParams.set('book', id);
+        navigator.clipboard.writeText(url.toString()).then(() => {
+            showToast('Book link copied!');
         });
     }
 
