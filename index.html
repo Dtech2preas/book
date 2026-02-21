@@ -1103,11 +1103,20 @@
     function applyFilterAndSort() {
         const query = searchInput.value.toLowerCase();
         sortBooks();
-        const filtered = allBooks.filter(book =>
-            book.title.toLowerCase().includes(query) ||
-            (book.seller && book.seller.toLowerCase().includes(query)) ||
-            (book.author && book.author.toLowerCase().includes(query))
-        );
+
+        const tokens = query.split(/\s+/).filter(t => t.length > 0);
+
+        const filtered = allBooks.filter(book => {
+            const title = (book.title || '').toLowerCase();
+            const seller = (book.seller || '').toLowerCase();
+            const author = (book.author || '').toLowerCase();
+
+            return tokens.every(token =>
+                title.includes(token) ||
+                seller.includes(token) ||
+                author.includes(token)
+            );
+        });
         renderBooks(filtered);
     }
 
