@@ -307,18 +307,31 @@
         <input type="hidden" id="book-id"> <!-- Hidden field for Book ID when editing -->
 
         <div class="form-group">
+            <label for="listing-type">Listing Type</label>
+            <select id="listing-type">
+                <option value="buy">Selling a Book</option>
+                <option value="looking_for">Looking for a Book</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="title">Book Title</label>
             <input type="text" id="title" required placeholder="e.g. Introduction to Physics">
         </div>
 
         <div class="form-group">
-            <label for="author">Author</label>
+            <label for="author">Author <span id="author-optional" style="display:none; font-weight: normal; font-size: 0.9em; color: #888;">(Optional)</span></label>
             <input type="text" id="author" required placeholder="e.g. J.K. Rowling">
         </div>
 
         <div class="form-group">
-            <label for="price">Price (e.g. R250)</label>
+            <label id="price-label" for="price">Price (e.g. R250)</label>
             <input type="text" id="price" required placeholder="R250">
+        </div>
+
+        <div class="form-group" id="negotiable-group" style="display:none; align-items: center; gap: 10px;">
+            <input type="checkbox" id="is-negotiable" style="width: auto;">
+            <label for="is-negotiable" style="margin: 0;">Price Range Negotiable</label>
         </div>
 
         <!-- NEW: Seller Select -->
@@ -341,7 +354,7 @@
         </div>
 
         <div class="form-group">
-            <label for="image">Book Image</label>
+            <label for="image">Book Image <span id="image-optional" style="display:none; font-weight: normal; font-size: 0.9em; color: #888;">(Optional)</span></label>
             <input type="file" id="image" accept="image/*">
             <div class="preview">
                 <img id="image-preview" src="#" alt="Image Preview">
@@ -403,6 +416,34 @@
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
     const bookIdInput = document.getElementById('book-id');
+
+    // Form toggle logic
+    const typeSelect = document.getElementById('listing-type');
+    const authorLabel = document.getElementById('author-optional');
+    const priceLabel = document.getElementById('price-label');
+    const negotiableGroup = document.getElementById('negotiable-group');
+    const isNegotiableInput = document.getElementById('is-negotiable');
+    const imageOptionalLabel = document.getElementById('image-optional');
+
+    typeSelect.addEventListener('change', function() {
+        const isLookingFor = this.value === 'looking_for';
+        if (isLookingFor) {
+            authorLabel.style.display = 'inline';
+            document.getElementById('author').required = false;
+            priceLabel.textContent = 'Price Range (e.g. R100 - R200)';
+            document.getElementById('price').placeholder = 'R100 - R200';
+            negotiableGroup.style.display = 'flex';
+            imageOptionalLabel.style.display = 'inline';
+        } else {
+            authorLabel.style.display = 'none';
+            document.getElementById('author').required = true;
+            priceLabel.textContent = 'Price (e.g. R250)';
+            document.getElementById('price').placeholder = 'R250';
+            negotiableGroup.style.display = 'none';
+            isNegotiableInput.checked = false;
+            imageOptionalLabel.style.display = 'none';
+        }
+    });
 
     // Seller Select
     const sellerSelect = document.getElementById('seller-select');
@@ -626,23 +667,29 @@
         const password = document.getElementById('password').value;
         savePassword(password);
 
+        const type = document.getElementById('listing-type').value;
         const title = document.getElementById('title').value;
         const author = document.getElementById('author').value;
         const price = document.getElementById('price').value;
+        const isNegotiable = document.getElementById('is-negotiable').checked;
         const seller = document.getElementById('seller').value;
         const contact = document.getElementById('contact').value;
         const base64Image = imageBase64Input.value;
 
-        if (!base64Image && !isEditMode) {
+        const isLookingFor = type === 'looking_for';
+
+        if (!base64Image && !isEditMode && !isLookingFor) {
             showMessage('Please select and crop an image.', 'error');
             resetSubmitBtn(isEditMode);
             return;
         }
 
         const payload = {
+            type,
             title,
-            author,
+            author: author || 'Not provided',
             price,
+            isNegotiable,
             seller,
             contact,
             image: base64Image
@@ -706,6 +753,10 @@
         cancelEditBtn.style.display = 'none';
         sellerSelect.value = "";
 
+        const typeSelectEl = document.getElementById('listing-type');
+        typeSelectEl.value = 'buy';
+        typeSelectEl.dispatchEvent(new Event('change'));
+
         loadPassword(); // restore password
     }
 
@@ -768,14 +819,23 @@
             div.className = 'book-item';
 
             // Use lazy loading image endpoint
-            const imgSrc = `${WORKER_URL}image?id=${book.id}`;
+            let imgSrc = `${WORKER_URL}image?id=${book.id}`;
+            // If no image is provided and it's a "looking_for" book, use a placeholder
+            if (book.type === 'looking_for' && !book.image) {
+                imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
+            }
+
+            const badgeHtml = book.type === 'looking_for'
+                ? `<span style="background-color: #ff9800; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-bottom: 5px; display: inline-block;">Looking For</span>`
+                : `<span style="background-color: #4CAF50; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-bottom: 5px; display: inline-block;">Selling</span>`;
 
             div.innerHTML = `
-                <img src="${imgSrc}" alt="${book.title}" loading="lazy">
+                ${badgeHtml}
+                <img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
                 <h3>${book.title}</h3>
                 <p><strong>Author:</strong> ${book.author}</p>
-                <p><strong>Price:</strong> ${book.price}</p>
-                <p><strong>Seller:</strong> ${book.seller}</p>
+                <p><strong>Price:</strong> ${book.price} ${book.isNegotiable ? '(Negotiable)' : ''}</p>
+                <p><strong>Seller/Buyer:</strong> ${book.seller}</p>
                 <div class="book-actions">
                     <button class="btn-edit" onclick="editBook('${book.id}')">Edit</button>
                     <button class="btn-delete" onclick="deleteBook('${book.id}')">Delete</button>
@@ -847,9 +907,12 @@
             const book = await response.json();
 
             // Populate form
+            document.getElementById('listing-type').value = book.type || 'buy';
+            document.getElementById('listing-type').dispatchEvent(new Event('change'));
             document.getElementById('title').value = book.title;
-            document.getElementById('author').value = book.author;
+            document.getElementById('author').value = book.author === 'Not provided' ? '' : book.author;
             document.getElementById('price').value = book.price;
+            document.getElementById('is-negotiable').checked = !!book.isNegotiable;
             document.getElementById('seller').value = book.seller;
             document.getElementById('contact').value = book.contact || '';
 

@@ -229,6 +229,39 @@
             border-bottom-color: #fff;
         }
 
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            margin: 1rem auto 0;
+            max-width: 600px;
+            background-color: var(--card-bg);
+            border-radius: 50px;
+            padding: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #aaa;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+        }
+        .tab-btn:hover:not(.active) {
+            color: #fff;
+        }
+
         /* ----- SEARCH BAR (improved) ----- */
         .container {
             max-width: 1200px;
@@ -686,13 +719,25 @@
 </header>
 
 <div class="container">
-    <div class="search-bar">
+    <div class="tabs-container">
+        <button id="tab-buy" class="tab-btn active">Buy Books</button>
+        <button id="tab-looking-for" class="tab-btn">Looking For Books</button>
+    </div>
+
+    <div class="search-bar" style="margin-top: 1.5rem;">
         <input type="text" id="search-input" placeholder="Search books by title, author, or seller...">
         <select id="sort-select">
             <option value="newest">Newest First</option>
             <option value="a-z">A-Z</option>
             <option value="z-a">Z-A</option>
         </select>
+    </div>
+
+    <div id="request-book-container" style="display: none; text-align: center; margin-bottom: 2rem;">
+        <p style="color: #ccc; margin-bottom: 10px;">Can't find the book you need? Let others know you're looking for it!</p>
+        <a href="#" id="request-book-btn" class="contact-btn" target="_blank" style="padding: 10px 20px; font-size: 1rem;">
+            Request a Book via WhatsApp
+        </a>
     </div>
 
     <div id="books-container" class="books-grid">
@@ -715,7 +760,7 @@
             <div id="modal-price" class="modal-price">R 0.00</div>
 
             <div class="modal-meta">
-                <p><strong>Seller:</strong> <span id="modal-seller">-</span></p>
+                <p><strong id="modal-seller-label">Seller:</strong> <span id="modal-seller">-</span></p>
                 <p><strong>Listed:</strong> <span id="modal-date">-</span></p>
             </div>
 
@@ -887,6 +932,7 @@
 <script>
     const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
     let allBooks = [];
+    let currentTab = 'buy'; // 'buy' or 'looking_for'
 
     const DB_NAME = 'BooksDB';
     const STORE_NAME = 'books';
@@ -945,6 +991,8 @@
     const modalWhatsappBtn = document.getElementById("modal-whatsapp-btn");
     const modalShareBtn = document.getElementById("modal-share-btn");
 
+    const modalSellerLabel = document.getElementById("modal-seller-label");
+
     // Toast & BackToTop
     const toastContainer = document.getElementById('toast-container');
     const backToTopBtn = document.getElementById('back-to-top');
@@ -989,21 +1037,58 @@
         }
     }
 
+    // Tab Logic
+    const tabBuy = document.getElementById('tab-buy');
+    const tabLookingFor = document.getElementById('tab-looking-for');
+    const requestBookContainer = document.getElementById('request-book-container');
+    const requestBookBtn = document.getElementById('request-book-btn');
+
+    tabBuy.addEventListener('click', () => {
+        currentTab = 'buy';
+        tabBuy.classList.add('active');
+        tabLookingFor.classList.remove('active');
+        requestBookContainer.style.display = 'none';
+        applyFilterAndSort();
+    });
+
+    tabLookingFor.addEventListener('click', () => {
+        currentTab = 'looking_for';
+        tabLookingFor.classList.add('active');
+        tabBuy.classList.remove('active');
+        requestBookContainer.style.display = 'block';
+        applyFilterAndSort();
+
+        // Setup request book whatsapp link
+        const phoneNumber = "27686620552"; // DTech number
+        const reqMessage = "Hello DTech, I am looking for a book to buy. Name: [Your Name], Book Title: [Book Title], Price Range: [Price Range], Contact Number: [Your Number].";
+        requestBookBtn.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(reqMessage)}`;
+    });
+
     function openModal(bookId) {
         const book = allBooks.find(b => b.id === bookId);
         if(!book) return;
 
         modal.style.display = "block";
 
+        const isLookingFor = book.type === 'looking_for';
+
         // Populate Data
-        const imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+        let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+        if (isLookingFor && !book.image) {
+            imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
+        }
+
         modalImg.src = imgSrc;
         modalImg.onerror = function() { this.src = 'https://via.placeholder.com/300x400?text=No+Cover'; };
 
         modalTitle.innerText = book.title;
-        modalAuthor.innerText = book.author ? `By ${book.author}` : 'Unknown Author';
-        modalPrice.innerText = book.price;
+        modalAuthor.innerText = book.author && book.author !== 'Not provided' ? `By ${book.author}` : 'Unknown Author';
+        modalPrice.innerText = book.price + (book.isNegotiable ? ' (Negotiable)' : '');
+
+        modalSellerLabel.innerText = isLookingFor ? 'Buyer:' : 'Seller:';
         modalSeller.innerText = book.seller || 'Anonymous';
+
+        modalWhatsappBtn.innerText = isLookingFor ? 'Contact Buyer on WhatsApp' : 'Contact Seller on WhatsApp';
 
         // Date Logic
         let dateStr = 'Unknown';
@@ -1021,7 +1106,13 @@
 
         // WhatsApp
         const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
-        const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+        let message = '';
+        if (isLookingFor) {
+            message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
+        } else {
+            message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+        }
+
         if (phone) {
              modalWhatsappBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
              modalWhatsappBtn.style.display = 'inline-block';
@@ -1123,21 +1214,29 @@
             }
             if (ts && (now - ts) < SEVEN_DAYS) isNew = true;
 
+            const isLookingFor = book.type === 'looking_for';
+
             const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
-            const message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+            let message = '';
+            if (isLookingFor) {
+                message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
+            } else {
+                message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+            }
             const encodedMessage = encodeURIComponent(message);
             const whatsappLink = phone ? `https://wa.me/${phone}?text=${encodedMessage}` : null;
 
             let contactButtonHtml = '';
             if (whatsappLink) {
-                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">WhatsApp Seller</a>`;
+                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">${isLookingFor ? 'WhatsApp Buyer' : 'WhatsApp Seller'}</a>`;
             } else {
                 contactButtonHtml = `<span class="contact-btn" style="background-color: #555; cursor: not-allowed;">No Info</span>`;
             }
 
-            const imgSrc = book.image
-                ? book.image
-                : `${WORKER_URL}image?id=${book.id}`;
+            let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+            if (isLookingFor && !book.image) {
+                imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
+            }
 
             // Share Button
             const shareBtnHtml = `
@@ -1155,9 +1254,9 @@
                 <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal('${book.id}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
                 <div class="book-details">
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
-                    <div class="book-author">By ${escapeHtml(book.author || 'Unknown')}</div>
-                    <div class="book-price">${escapeHtml(book.price)}</div>
-                    <div class="book-seller">Seller: ${escapeHtml(book.seller)}</div>
+                    <div class="book-author">By ${escapeHtml(book.author && book.author !== 'Not provided' ? book.author : 'Unknown')}</div>
+                    <div class="book-price">${escapeHtml(book.price)} ${book.isNegotiable ? '<span style="font-size: 0.8em; color: #aaa;">(Negotiable)</span>' : ''}</div>
+                    <div class="book-seller">${isLookingFor ? 'Buyer' : 'Seller'}: ${escapeHtml(book.seller)}</div>
                     ${contactButtonHtml}
                 </div>
             `;
@@ -1209,6 +1308,10 @@
         const tokens = query.split(/\s+/).filter(t => t.length > 0);
 
         const filtered = allBooks.filter(book => {
+            // Check tab type
+            const bookType = book.type || 'buy';
+            if (bookType !== currentTab) return false;
+
             const title = (book.title || '').toLowerCase();
             const seller = (book.seller || '').toLowerCase();
             const author = (book.author || '').toLowerCase();

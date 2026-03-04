@@ -225,8 +225,10 @@ async function handleRequest(request) {
 
       const body = await request.json();
 
+      const isLookingFor = body.type === 'looking_for';
+
       // Validation
-      if (!body.title || !body.author || !body.price || !body.image) {
+      if (!body.title || (!isLookingFor && !body.author) || !body.price || (!isLookingFor && !body.image)) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers });
       }
 
@@ -259,13 +261,15 @@ async function handleRequest(request) {
       const id = `book:${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
       const bookData = {
+        type: body.type || 'buy',
+        isNegotiable: !!body.isNegotiable,
         title: body.title,
-        author: body.author,
+        author: body.author || 'Not provided',
         price: body.price,
         seller: body.seller || "Anonymous",
         contact: body.contact || "",
         description: body.description || "",
-        image: body.image, // Base64 string
+        image: body.image || "", // Base64 string
         createdAt: new Date().toISOString(),
         sellerCode: code // Assign Code
       };
@@ -343,8 +347,10 @@ async function handleRequest(request) {
 
       const body = await request.json();
 
+      const isLookingFor = body.type === 'looking_for';
+
       // Validation
-      if (!body.title || !body.author || !body.price || !body.image) {
+      if (!body.title || (!isLookingFor && !body.author) || !body.price || (!isLookingFor && !body.image)) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers });
       }
 
@@ -380,13 +386,15 @@ async function handleRequest(request) {
       }
 
       const bookData = {
+        type: body.type || existing.type || 'buy',
+        isNegotiable: body.isNegotiable !== undefined ? !!body.isNegotiable : !!existing.isNegotiable,
         title: body.title,
-        author: body.author,
+        author: body.author || existing.author || 'Not provided',
         price: body.price,
         seller: body.seller || existing.seller,
         contact: body.contact || existing.contact,
         description: body.description || existing.description || "",
-        image: body.image,
+        image: body.image || existing.image || "",
         createdAt: existing.createdAt,
         sellerCode: code
       };
