@@ -237,17 +237,17 @@
             max-width: 600px;
             background-color: var(--card-bg);
             border-radius: 50px;
-            padding: 5px;
+            padding: 2px;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
             border: 1px solid var(--border-color);
         }
         .tab-btn {
             flex: 1;
-            padding: 10px 20px;
+            padding: 6px 20px;
             border: none;
             background: transparent;
             color: #aaa;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: bold;
             cursor: pointer;
             border-radius: 50px;
@@ -1074,12 +1074,13 @@
 
         // Populate Data
         let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
-        if (isLookingFor && !book.image) {
-            imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
-        }
 
         modalImg.src = imgSrc;
-        modalImg.onerror = function() { this.src = 'https://via.placeholder.com/300x400?text=No+Cover'; };
+        modalImg.onerror = function() {
+            this.src = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
+        };
 
         modalTitle.innerText = book.title;
         modalAuthor.innerText = book.author && book.author !== 'Not provided' ? `By ${book.author}` : 'Unknown Author';
@@ -1167,8 +1168,7 @@
                     throw networkErr;
                 }
             }
-            sortBooks();
-            renderBooks(allBooks);
+            applyFilterAndSort();
 
             // Check Deep Link
             const params = new URLSearchParams(window.location.search);
@@ -1234,9 +1234,9 @@
             }
 
             let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
-            if (isLookingFor && !book.image) {
-                imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
-            }
+            const fallbackSrc = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
 
             // Share Button
             const shareBtnHtml = `
@@ -1251,7 +1251,7 @@
             card.innerHTML = `
                 ${badgeHtml}
                 ${shareBtnHtml}
-                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal('${book.id}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
+                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal('${book.id}')" loading="lazy" onerror="this.src='${fallbackSrc}'">
                 <div class="book-details">
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
                     <div class="book-author">By ${escapeHtml(book.author && book.author !== 'Not provided' ? book.author : 'Unknown')}</div>
