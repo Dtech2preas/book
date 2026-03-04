@@ -202,6 +202,21 @@
     </div>
 
     <div class="section">
+        <h2>Looking For a Book?</h2>
+        <p>Can't find the specific textbook you need? Let us know what you're looking for and we'll add it to the "Looking For Books" section!</p>
+        <p><strong>Please provide:</strong></p>
+        <ul>
+            <li>Your Name</li>
+            <li>Book Title</li>
+            <li>Preferred Price Range</li>
+            <li>Your Contact Number</li>
+            <li><strong>Optional:</strong> Book Author or a picture</li>
+        </ul>
+
+        <a href="#" id="request-link" class="whatsapp-btn" target="_blank">Request a Book via WhatsApp</a>
+    </div>
+
+    <div class="section">
         <h2>Other Services</h2>
         <p>At DTech, we offer more than just a marketplace for books. We provide digital solutions for small businesses.</p>
         <ul>
@@ -220,10 +235,19 @@
 
 <script>
     const phoneNumber = "27686620552"; // 0686620552
-    const message = "Hello DTech, I would like to sell a book on your site. Name: [Your Name], Price: [Price], Contact Number: [Your Number]. (NB: Please attach a clear picture of the book)";
-    const encodedMessage = encodeURIComponent(message);
 
-    document.getElementById('sell-link').href = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    // Sell Link
+    const sellMessage = "Hello DTech, I would like to sell a book on your site. Name: [Your Name], Price: [Price], Contact Number: [Your Number]. (NB: Please attach a clear picture of the book)";
+    const encodedSellMessage = encodeURIComponent(sellMessage);
+    document.getElementById('sell-link').href = `https://wa.me/${phoneNumber}?text=${encodedSellMessage}`;
+
+    // Request Link
+    const reqMessage = "Hello DTech, I am looking for a book to buy. Name: [Your Name], Book Title: [Book Title], Price Range: [Price Range], Contact Number: [Your Number].";
+    const encodedReqMessage = encodeURIComponent(reqMessage);
+    const requestLinkBtn = document.getElementById('request-link');
+    if (requestLinkBtn) {
+        requestLinkBtn.href = `https://wa.me/${phoneNumber}?text=${encodedReqMessage}`;
+    }
 </script>
 
 </body>
