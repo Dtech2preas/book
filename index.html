@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DTECH - Student Marketplace</title>
-    <meta name="description" content="DTECH Book Exchange - A student-focused platform for buying and selling textbooks. Part of the DTECH ecosystem.">
-    <meta name="keywords" content="entrepreneurs, books, text books, market, student marketplace, DTECH, PREASX24, Seakwa Jonas Mochebane">
+    <title>Student Marketplace</title>
+    <script src="config.js"></script>
+    <meta name="description" content="Student-focused platform for buying and selling textbooks.">
+    <meta name="keywords" content="entrepreneurs, books, text books, market, student marketplace, PREASX24, Seakwa Jonas Mochebane">
     <meta name="author" content="Seakwa Jonas Mochebane">
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://books.dtech-services.co.za/">
-    <meta property="og:title" content="DTECH - Student Marketplace">
-    <meta property="og:description" content="Buy and sell textbooks easily with DTECH Book Exchange. connect directly with student sellers.">
-    <meta property="og:image" content="https://books.dtech-services.co.za/logo.png">
+    <meta property="og:url" content="/">
+    <meta property="og:title" content="Student Marketplace">
+    <meta property="og:description" content="Buy and sell textbooks easily. connect directly with student sellers.">
+    <meta property="og:image" content="logo.png">
 
     <style>
         :root {
@@ -688,11 +689,11 @@
     <!-- TOP ROW: logo + text + seller icon -->
     <div class="header-top">
         <div class="header-logo-container">
-            <img src="logo.png" alt="DTech Logo" class="header-logo">
-            <h1>DTECH</h1>
+            <img src="logo.png" alt="Logo" class="header-logo brand-logo">
+            <h1 class="brand-name">Platform</h1>
         </div>
         <div class="header-right">
-            <span class="market-text">The Student Marketplace</span>
+            <span class="market-text brand-description">The Student Marketplace</span>
             <a href="seller-manage.html" class="seller-link" title="Seller Management">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -827,9 +828,7 @@
     </div>
 </div>
 
-<footer>
-    DTECH empowering the youth through digital innovation<br>
-    <span>&copy; 2026 DTECH</span>
+<footer class="footer-text">
 </footer>
 
 <!-- Stats and Visitor Script -->
@@ -879,7 +878,6 @@
   // Stats Logic
   const statsModal = document.getElementById('statsModal');
   const statsBtn = document.getElementById('stats-btn');
-  const MAIN_WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev';
 
   window.closeStatsModal = function() {
       statsModal.style.display = "none";
@@ -904,6 +902,10 @@
 
   async function fetchStats() {
       try {
+          // Wait for config to load
+          const config = await window.appConfigPromise;
+          const MAIN_WORKER_URL = config.workerUrl.replace(/\/$/, "");
+
           // Reset values to 0 before animating? Or animate from 0.
           document.getElementById('stat-listed').innerText = '0';
           document.getElementById('stat-sellers').innerText = '0';
@@ -930,7 +932,7 @@
 
 <!-- Your main script (unchanged) -->
 <script>
-    const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
+    let WORKER_URL = '';
     let allBooks = [];
     let currentTab = 'buy'; // 'buy' or 'looking_for'
 
@@ -1058,10 +1060,12 @@
         requestBookContainer.style.display = 'block';
         applyFilterAndSort();
 
-        // Setup request book whatsapp link
-        const phoneNumber = "27686620552"; // DTech number
-        const reqMessage = "Hello DTech, I am looking for a book to buy. Name: [Your Name], Book Title: [Book Title], Price Range: [Price Range], Contact Number: [Your Number].";
-        requestBookBtn.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(reqMessage)}`;
+        // Setup request book whatsapp link (wait for config promise to ensure it's loaded)
+        window.appConfigPromise.then(config => {
+            const phoneNumber = config.adminWhatsAppNumber;
+            const reqMessage = `Hello ${config.siteName}, I am looking for a book to buy. Name: [Your Name], Book Title: [Book Title], Price Range: [Price Range], Contact Number: [Your Number].`;
+            requestBookBtn.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(reqMessage)}`;
+        });
     });
 
     function openModal(bookId) {
@@ -1111,7 +1115,7 @@
         if (isLookingFor) {
             message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
         } else {
-            message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+            message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${window.appConfig.siteName} website.`;
         }
 
         if (phone) {
@@ -1218,10 +1222,11 @@
 
             const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
             let message = '';
+            const siteName = window.appConfig ? window.appConfig.siteName : 'our';
             if (isLookingFor) {
                 message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
             } else {
-                message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the dtech website.`;
+                message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${siteName} website.`;
             }
             const encodedMessage = encodeURIComponent(message);
             const whatsappLink = phone ? `https://wa.me/${phone}?text=${encodedMessage}` : null;
@@ -1338,7 +1343,11 @@
             .replace(/'/g, "&#039;");
     }
 
-    fetchBooks();
+    window.appConfigPromise.then(config => {
+        WORKER_URL = config.workerUrl;
+        if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
+        fetchBooks();
+    });
 </script>
 </body>
 </html>
