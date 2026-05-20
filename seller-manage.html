@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Management - DTECH</title>
+    <title>Seller Management</title>
+    <script src="config.js"></script>
     <style>
         :root {
             /* DTech Blue & Black Theme */
@@ -205,8 +206,8 @@
 
 <header>
     <div class="header-logo-container">
-        <img src="logo.png" alt="DTech Logo" class="header-logo">
-        <h1>Seller Portal</h1>
+        <img src="logo.png" alt="Logo" class="header-logo brand-logo">
+        <h1><span class="brand-name">Platform</span> Seller Management</h1>
     </div>
 </header>
 
@@ -236,12 +237,11 @@
     </div>
 </div>
 
-<footer>
-    &copy; 2026 DTECH
+<footer class="footer-text">
 </footer>
 
 <script>
-    const WORKER_URL = 'https://mute-snowflake-4d2a.dtech2services.workers.dev/';
+    let WORKER_URL = '';
     const loginForm = document.getElementById('login-form');
     const codeInput = document.getElementById('seller-code');
     const loginMessage = document.getElementById('login-message');
@@ -388,6 +388,15 @@
         loginMessage.className = `message ${type}`;
         loginMessage.style.display = 'block';
     }
+
+    window.appConfigPromise.then(config => {
+        WORKER_URL = config.workerUrl;
+        if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
+
+        if (sessionStorage.getItem('sellerCode')) {
+             handleLogin(sessionStorage.getItem('sellerCode'));
+        }
+    });
 </script>
 
 </body>

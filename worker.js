@@ -3,8 +3,6 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
-const ALLOWED_ORIGIN = 'https://books.dtech-services.co.za'; // Or '*' for development
-
 async function handleRequest(request) {
   const url = new URL(request.url);
 
