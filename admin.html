@@ -161,6 +161,7 @@
             <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab" onclick="switchTab('pending')">Pending Approvals</button>
             <button class="tab" onclick="switchTab('inventory')">Inventory</button>
+            <button class="tab" onclick="switchTab('reports')">Reports</button>
         </div>
 
         <!-- Dashboard Tab -->
@@ -219,6 +220,23 @@
                     </tr>
                 </thead>
                 <tbody id="inventory-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <h3>Reports</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Reporter Info</th>
+                        <th>Reason</th>
+                        <th>Book ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-tbody"></tbody>
             </table>
         </div>
     </div>
@@ -299,9 +317,46 @@
             renderTable('pending-tbody', pending, true);
             renderTable('inventory-tbody', active, false);
 
+            const reportRes = await fetch(workerUrl + 'admin/reports', {
+                headers: { 'X-Admin-Password': adminPass }
+            });
+            const reports = await reportRes.json();
+            renderReportsTable('reports-tbody', reports);
+
         } catch (err) {
             console.error(err);
         }
+    }
+
+    function renderReportsTable(tbodyId, data) {
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No records found.</td></tr>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            const d = new Date(item.createdAt);
+            tr.innerHTML = `
+                <td>${d.toLocaleDateString()} ${d.toLocaleTimeString()}</td>
+                <td>
+                    <strong>${item.reporterName}</strong><br>
+                    <a href="https://wa.me/${item.reporterPhone.replace(/\D/g, '')}" target="_blank" style="color: var(--primary-color);">WhatsApp</a>
+                </td>
+                <td>${item.reason}</td>
+                <td>
+                    <a href="/?book=${item.bookId}" target="_blank" style="color: var(--primary-color);">${item.bookId}</a>
+                </td>
+                <td>
+                    <button style="background: #333;" onclick="deleteReport('${item.id}')">Dismiss</button>
+                    <button style="background: #d32f2f;" onclick="deleteBook('${item.bookId}')">Delete Book</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     function renderTable(tbodyId, data, isPending) {
@@ -383,6 +438,34 @@
             console.error(err);
         }
     }
+
+    async function deleteReport(id) {
+        if (!confirm('Are you sure you want to dismiss this report?')) return;
+
+        try {
+            const res = await fetch(`${workerUrl}admin/reports?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Password': adminPass }
+            });
+
+            if (res.ok) {
+                fetchData();
+            } else {
+                alert('Failed to dismiss report');
+            }
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
 </script>
+
+<footer>
+    <div style="margin-top: 10px; text-align: center; padding: 1rem; background-color: #000; border-top: 1px solid #333;">
+        <a href="javascript:void(0)" onclick="openTermsModal()" style="color: #2196F3; text-decoration: none; font-size: 0.85rem;">Terms of Use & Privacy Policy</a>
+    </div>
+</footer>
+
+<script src="terms-modal.js"></script>
 </body>
 </html>

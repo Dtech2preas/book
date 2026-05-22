@@ -773,8 +773,41 @@
                 <button id="modal-share-btn" class="action-btn btn-share">
                     Share Book Link
                 </button>
+                <button id="modal-report-btn" class="action-btn" style="background-color: #d32f2f; margin-top: 10px;" onclick="openReportModal()">
+                    Report Listing
+                </button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="modal" style="z-index: 10000; align-items: center; justify-content: center; display: none;">
+    <div class="modal-content" style="max-width: 400px; padding: 2rem;">
+        <span class="close-btn" style="float: right; cursor: pointer; font-size: 1.5rem; margin-top: -10px;" onclick="closeReportModal()">&times;</span>
+        <h2 style="color: var(--primary-color);">Report Listing</h2>
+        <form id="report-form" style="text-align: left; margin-top: 15px;">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Your Name</label>
+                <input type="text" id="report-name" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #333; background: #111; color: #fff;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Your WhatsApp Number</label>
+                <input type="text" id="report-phone" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #333; background: #111; color: #fff;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Reason for Reporting</label>
+                <select id="report-reason" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #333; background: #111; color: #fff;">
+                    <option value="">Select a reason...</option>
+                    <option value="Spam / Fake Listing">Spam / Fake Listing</option>
+                    <option value="Not a Textbook">Not a Textbook</option>
+                    <option value="Scam / Fraud">Scam / Fraud</option>
+                    <option value="Inappropriate Content">Inappropriate Content</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <button type="submit" id="report-submit-btn" style="width: 100%; padding: 10px; background-color: #d32f2f; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Submit Report</button>
+        </form>
     </div>
 </div>
 
@@ -848,6 +881,9 @@
 </div>
 
 <footer class="footer-text">
+    <div style="margin-top: 10px;">
+        <a href="javascript:void(0)" onclick="openTermsModal()" style="color: var(--primary-color); text-decoration: none; font-size: 0.85rem;">Terms of Use & Privacy Policy</a>
+    </div>
 </footer>
 
 <!-- Stats and Visitor Script -->
@@ -1167,7 +1203,75 @@
         };
     }
 
+
+    // Report Modal Logic
+    let currentReportBookId = null;
+
+    window.openReportModal = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentReportBookId = urlParams.get('book'); // Assume 'book' param is set when modal is open
+        if(!currentReportBookId) {
+             // Fallback if URL param wasn't set, try finding it from the active modal's state if we stored it.
+             // Actually, the easiest way is to pass bookId directly from the "Report Listing" button click.
+             // But since we rely on openModal setting the URL param...
+        }
+        document.getElementById('reportModal').style.display = 'flex';
+    };
+
+    window.closeReportModal = function() {
+        document.getElementById('reportModal').style.display = 'none';
+        document.getElementById('report-form').reset();
+    };
+
+    document.getElementById('report-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Find current book ID
+        const urlParams = new URLSearchParams(window.location.search);
+        let bookIdToReport = urlParams.get('book');
+
+        if (!bookIdToReport) {
+            showToast('Error: Could not determine which book to report.');
+            return;
+        }
+
+        const name = document.getElementById('report-name').value;
+        const phone = document.getElementById('report-phone').value;
+        const reason = document.getElementById('report-reason').value;
+
+        const btn = document.getElementById('report-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            const response = await fetch(`${WORKER_URL}report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookId: bookIdToReport,
+                    reporterName: name,
+                    reporterPhone: phone,
+                    reason: reason
+                })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                showToast('Report submitted successfully. We will review it shortly.');
+                closeReportModal();
+            } else {
+                showToast(result.error || 'Failed to submit report.');
+            }
+        } catch(err) {
+            console.error(err);
+            showToast('Network error.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Submit Report';
+        }
+    });
+
     function closeModal() {
+
         modal.style.display = "none";
         // Clear param without reload
         const url = new URL(window.location.href);
@@ -1381,5 +1485,6 @@
         fetchBooks();
     });
 </script>
+<script src="terms-modal.js"></script>
 </body>
 </html>
