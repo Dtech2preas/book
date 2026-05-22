@@ -99,9 +99,37 @@ async function handleRequest(request) {
       }
 
       // 4. Stats Endpoint: /stats
+
+      // Admin Endpoint: /admin/books
+      if (url.pathname === '/admin/books') {
+        const password = request.headers.get("X-Admin-Password");
+        if (password !== "admin-secret-123") {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+        const list = await BOOKS_KV.list({ prefix: "book:" });
+        const books = await Promise.all(list.keys.map(async (key) => {
+          const value = await BOOKS_KV.get(key.name, { type: "json" });
+          if (!value) return null;
+          const { image, sellerCode, ...lightweightBook } = value;
+          return { id: key.name, ...lightweightBook, sellerCode };
+        }));
+        return new Response(JSON.stringify(books.filter(b => b !== null)), { headers });
+      }
+
       if (url.pathname === '/stats') {
         const list = await BOOKS_KV.list({ prefix: "book:" });
-        const booksCount = list.keys.length;
+        let booksCount = 0;
+        let pendingCount = 0;
+        let activeCount = 0;
+
+        const vals = await Promise.all(list.keys.map(key => BOOKS_KV.get(key.name, { type: "json" })));
+        for (const val of vals) {
+          if (val) {
+            booksCount++;
+            if (val.status === 'pending') pendingCount++;
+            else if (val.status === 'active' || !val.status) activeCount++;
+          }
+        }
 
         const sellersMap = await BOOKS_KV.get("system:sellers", { type: "json" });
         const sellersCount = sellersMap ? Object.keys(sellersMap).length : 0;
@@ -111,6 +139,8 @@ async function handleRequest(request) {
 
         return new Response(JSON.stringify({
             booksListed: booksCount,
+            pendingCount: pendingCount,
+            activeCount: activeCount,
             sellersCount: sellersCount,
             sold: soldCount
         }), { headers });
@@ -130,8 +160,8 @@ async function handleRequest(request) {
         return { id: key.name, ...lightweightBook };
       }));
 
-      // Filter out nulls
-      const validBooks = books.filter(b => b !== null);
+      // Filter out nulls and only active books
+      const validBooks = books.filter(b => b !== null && (b.status === 'active' || b.status === undefined));
 
       return new Response(JSON.stringify(validBooks), { headers });
     } catch (err) {
@@ -215,12 +245,6 @@ async function handleRequest(request) {
       }
 
       // --- Add Book Endpoint ---
-      // Check Admin Password
-      const password = request.headers.get("X-Admin-Password");
-      if (password !== "admin-secret-123") {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
-      }
-
       const body = await request.json();
 
       const isLookingFor = body.type === 'looking_for';
@@ -269,7 +293,8 @@ async function handleRequest(request) {
         description: body.description || "",
         image: body.image || "", // Base64 string
         createdAt: new Date().toISOString(),
-        sellerCode: code // Assign Code
+        sellerCode: code, // Assign Code
+        status: 'pending'
       };
 
       // Store in KV
@@ -330,8 +355,34 @@ async function handleRequest(request) {
     }
   }
 
+
   if (request.method === 'PUT') {
     try {
+      const url = new URL(request.url);
+
+      // --- Approve Endpoint ---
+      if (url.pathname === '/admin/approve') {
+        const password = request.headers.get("X-Admin-Password");
+        if (password !== "admin-secret-123") {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+
+        const id = url.searchParams.get("id");
+        if (!id) {
+          return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400, headers });
+        }
+
+        const existing = await BOOKS_KV.get(id, { type: "json" });
+        if (!existing) {
+          return new Response(JSON.stringify({ error: "Book not found" }), { status: 404, headers });
+        }
+
+        existing.status = 'active';
+        await BOOKS_KV.put(id, JSON.stringify(existing));
+
+        return new Response(JSON.stringify({ success: true, message: "Book approved" }), { headers });
+      }
+
       // Check Admin Password
       const password = request.headers.get("X-Admin-Password");
       if (password !== "admin-secret-123") {

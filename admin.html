@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Add Book</title>
+    <title>Admin Dashboard</title>
     <script src="config.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         :root {
-            /* DTech Blue & Black Theme */
             --primary-color: #00D2FF;
             --primary-hover: #00B4D8;
             --secondary-color: #E0E0E0;
@@ -28,927 +25,324 @@
             background-color: #000000;
             color: var(--primary-color);
             padding: 1rem 2rem;
-            text-align: center;
             border-bottom: 2px solid var(--primary-color);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-        }
-        .header-logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.5rem;
+            justify-content: space-between;
         }
         .header-logo {
-            height: 50px;
-            margin-right: 15px;
-            object-fit: contain;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            height: 40px;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 2rem auto;
-            padding: 2rem;
+            padding: 0 1rem;
+        }
+
+        /* Auth Login */
+        #auth-section {
             background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        h2 {
-            margin-top: 0;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: 4rem auto;
             text-align: center;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2rem;
         }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: #fff;
-        }
-        input[type="text"],
-        input[type="number"],
-        input[type="password"],
-        input[type="file"],
-        select {
+        #auth-section input {
             width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 1rem;
+            padding: 10px;
+            margin-bottom: 1rem;
             box-sizing: border-box;
-            background-color: #2a2a2a;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background: #000;
             color: #fff;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        input:focus, select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 5px rgba(0, 210, 255, 0.3);
-        }
-        ::placeholder {
-            color: #777;
         }
         button {
-            width: 100%;
-            padding: 1rem;
             background-color: var(--primary-color);
-            color: #000; /* Black text on bright blue for contrast */
+            color: #000;
             border: none;
-            border-radius: 4px;
-            font-size: 1.1rem;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            text-transform: uppercase;
-            transition: background-color 0.2s, transform 0.2s;
+            transition: 0.3s;
         }
-        button:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
-        }
-        button:disabled {
-            background-color: #555;
-            color: #888;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .message {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 4px;
-            text-align: center;
-            display: none;
-        }
-        .success {
-            background-color: rgba(21, 87, 36, 0.2);
-            color: #d4edda;
-            border: 1px solid #155724;
-        }
-        .error {
-            background-color: rgba(114, 28, 36, 0.2);
-            color: #f8d7da;
-            border: 1px solid #721c24;
-        }
-        .preview {
-            margin-top: 1rem;
-            text-align: center;
-        }
-        .preview img {
-            max-width: 100%;
-            max-height: 300px;
-            border: 1px solid var(--primary-color);
-            border-radius: 4px;
-            display: none;
-            background-color: #000;
-        }
-        small {
-            color: #888;
-        }
+        button:hover { background-color: var(--primary-hover); }
 
-        /* Cropper Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.9);
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
         }
-        .modal-content {
-            margin: 5% auto;
-            padding: 20px;
-            width: 80%;
-            max-width: 800px;
-            background-color: var(--card-bg);
+        .tab {
+            padding: 10px 20px;
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
         }
-        .modal-buttons {
-            margin-top: 1rem;
-            display: flex;
+        .tab.active {
+            background: var(--primary-color);
+            color: #000;
+            border-color: var(--primary-color);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Dashboard Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
-            justify-content: center;
+            margin-bottom: 2rem;
         }
-        .img-container {
-            max-height: 500px;
-            display: flex;
-            justify-content: center;
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
         }
-        .img-container img {
-            max-width: 100%;
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
         }
 
-        /* Sellers Table */
-        .sellers-container {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
-        }
-        .seller-table {
+        /* Tables */
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
+            background: var(--card-bg);
         }
-        .seller-table th, .seller-table td {
-            border: 1px solid var(--border-color);
-            padding: 0.8rem;
+        th, td {
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid var(--border-color);
         }
-        .seller-table th {
-            background-color: #2a2a2a;
-            color: var(--primary-color);
+        th { color: var(--primary-color); }
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin-right: 5px;
         }
-        .seller-table tr:nth-child(even) {
-            background-color: #252525;
-        }
-
-        /* Book List Styles */
-        .book-list-container {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
-        }
-        .search-bar {
-            margin-bottom: 1.5rem;
-        }
-        .book-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .book-item {
-            background-color: #2a2a2a;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .book-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-            background-color: #000;
-            margin-bottom: 1rem;
-            border-radius: 4px;
-        }
-        .book-item h3 {
-            margin: 0.5rem 0;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-        }
-        .book-item p {
-            margin: 0.3rem 0;
-            color: #bbb;
-            font-size: 0.9rem;
-        }
-        .book-actions {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            width: 100%;
-        }
-        .book-actions button {
-            padding: 0.5rem;
-            font-size: 0.9rem;
-        }
-        .btn-delete {
-            background-color: #d32f2f;
-            color: white;
-        }
-        .btn-delete:hover {
-            background-color: #b71c1c;
-        }
-        .btn-edit {
-            background-color: #fbc02d;
-            color: black;
-        }
-        .btn-edit:hover {
-            background-color: #f9a825;
-        }
+        .btn-approve { background-color: #28a745; color: #fff; }
+        .btn-reject { background-color: #dc3545; color: #fff; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="header-logo-container">
-        <img src="logo.png" alt="Logo" class="header-logo brand-logo">
-        <h1><span class="brand-name">Platform</span> Admin Panel</h1>
+    <div style="display:flex; align-items:center; gap: 10px;">
+        <img src="logo.png" alt="Logo" class="header-logo">
+        <h2 style="margin:0;">Admin Dashboard</h2>
     </div>
+    <a href="index.html" style="color:var(--primary-color); text-decoration:none;">← Home</a>
 </header>
 
 <div class="container">
-    <h2 id="form-title">Add New Book</h2>
-    <form id="add-book-form">
-        <div class="form-group">
-            <label for="password">Admin Password</label>
-            <input type="password" id="password" required placeholder="Enter admin password">
+    <!-- Auth Section -->
+    <div id="auth-section">
+        <h3>Admin Access</h3>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+        <button onclick="login()">Login</button>
+        <p id="auth-error" style="color:red; display:none; margin-top:10px;">Invalid password</p>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-section" style="display: none;">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('pending')">Pending Approvals</button>
+            <button class="tab" onclick="switchTab('inventory')">Inventory</button>
         </div>
 
-        <input type="hidden" id="book-id"> <!-- Hidden field for Book ID when editing -->
-
-        <div class="form-group">
-            <label for="listing-type">Listing Type</label>
-            <select id="listing-type">
-                <option value="buy">Selling a Book</option>
-                <option value="looking_for">Looking for a Book</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="title">Book Title</label>
-            <input type="text" id="title" required placeholder="e.g. Introduction to Physics">
-        </div>
-
-        <div class="form-group">
-            <label for="author">Author <span id="author-optional" style="display:none; font-weight: normal; font-size: 0.9em; color: #888;">(Optional)</span></label>
-            <input type="text" id="author" required placeholder="e.g. J.K. Rowling">
-        </div>
-
-        <div class="form-group">
-            <label id="price-label" for="price">Price (e.g. R250)</label>
-            <input type="text" id="price" required placeholder="R250">
-        </div>
-
-        <div class="form-group" id="negotiable-group" style="display:none; align-items: center; gap: 10px;">
-            <input type="checkbox" id="is-negotiable" style="width: auto;">
-            <label for="is-negotiable" style="margin: 0;">Price Range Negotiable</label>
-        </div>
-
-        <!-- NEW: Seller Select -->
-        <div class="form-group">
-            <label for="seller-select">Select Existing Seller (Optional)</label>
-            <select id="seller-select">
-                <option value="">-- New / Manual Entry --</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="seller">Seller Name</label>
-            <input type="text" id="seller" required placeholder="Your Name">
-        </div>
-
-        <div class="form-group">
-            <label for="contact">WhatsApp Number</label>
-            <input type="text" id="contact" required placeholder="e.g. 27821234567">
-            <small>Enter number in international format without + (e.g. 27...)</small>
-        </div>
-
-        <div class="form-group">
-            <label for="image">Book Image <span id="image-optional" style="display:none; font-weight: normal; font-size: 0.9em; color: #888;">(Optional)</span></label>
-            <input type="file" id="image" accept="image/*">
-            <div class="preview">
-                <img id="image-preview" src="#" alt="Image Preview">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div>Total Active Books</div>
+                    <div id="stat-active" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>Pending Approvals</div>
+                    <div id="stat-pending" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>Registered Sellers</div>
+                    <div id="stat-sellers" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>Books Sold</div>
+                    <div id="stat-sold" class="stat-value">0</div>
+                </div>
             </div>
-            <!-- Hidden input to store base64 image data -->
-            <input type="hidden" id="image-base64">
+            <div style="text-align:center;">
+                <button onclick="fetchData()">Refresh Data</button>
+            </div>
         </div>
 
-        <button type="submit" id="submit-btn">Upload Book</button>
-        <button type="button" id="cancel-edit-btn" style="display:none; margin-top: 1rem; background-color: #555; color: white;">Cancel Edit</button>
-    </form>
-
-    <div id="message" class="message"></div>
-
-    <!-- NEW: Sellers Section -->
-    <div class="sellers-container">
-        <h2>Seller Management</h2>
-        <button id="migrate-btn" style="background-color: #555; margin-bottom: 1rem;">Migrate / Refresh Sellers</button>
-        <div id="sellers-list">
-            <p style="text-align: center; color: #777;">Click "Migrate / Refresh" to load sellers.</p>
+        <!-- Pending Tab -->
+        <div id="pending" class="tab-content">
+            <h3>Pending Approvals</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Details</th>
+                        <th>Seller</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-tbody"></tbody>
+            </table>
         </div>
-    </div>
 
-    <div class="book-list-container">
-        <h2>Saved Books</h2>
-        <div class="search-bar">
-            <input type="text" id="search-input" placeholder="Search by title, author, or seller...">
-        </div>
-        <button id="load-books-btn" style="margin-bottom: 1rem;">Load/Refresh Books</button>
-        <div id="book-list" class="book-list">
-            <!-- Books will be loaded here -->
-            <p style="text-align: center; color: #777;">No books loaded. Click "Load/Refresh Books" to view.</p>
-        </div>
-    </div>
-</div>
-
-<!-- Cropper Modal -->
-<div id="cropper-modal" class="modal">
-    <div class="modal-content">
-        <h2>Crop Image</h2>
-        <div class="img-container">
-            <img id="cropper-image" src="">
-        </div>
-        <div class="modal-buttons">
-            <button id="crop-cancel" style="background-color: #555; color: #fff;">Cancel</button>
-            <button id="crop-confirm">Crop & Save</button>
+        <!-- Inventory Tab -->
+        <div id="inventory" class="tab-content">
+            <h3>Active Inventory</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Details</th>
+                        <th>Seller</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-tbody"></tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-    let WORKER_URL = '';
-    const form = document.getElementById('add-book-form');
-    const imageInput = document.getElementById('image');
-    const imagePreview = document.getElementById('image-preview');
-    const imageBase64Input = document.getElementById('image-base64');
-    const messageDiv = document.getElementById('message');
-    const submitBtn = document.getElementById('submit-btn');
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const formTitle = document.getElementById('form-title');
-    const bookIdInput = document.getElementById('book-id');
+    let adminPass = '';
+    const workerUrl = MAIN_WORKER_URL;
 
-    // Form toggle logic
-    const typeSelect = document.getElementById('listing-type');
-    const authorLabel = document.getElementById('author-optional');
-    const priceLabel = document.getElementById('price-label');
-    const negotiableGroup = document.getElementById('negotiable-group');
-    const isNegotiableInput = document.getElementById('is-negotiable');
-    const imageOptionalLabel = document.getElementById('image-optional');
+    function login() {
+        adminPass = document.getElementById('adminPassword').value;
+        document.getElementById('auth-error').style.display = 'none';
 
-    typeSelect.addEventListener('change', function() {
-        const isLookingFor = this.value === 'looking_for';
-        if (isLookingFor) {
-            authorLabel.style.display = 'inline';
-            document.getElementById('author').required = false;
-            priceLabel.textContent = 'Price Range (e.g. R100 - R200)';
-            document.getElementById('price').placeholder = 'R100 - R200';
-            negotiableGroup.style.display = 'flex';
-            imageOptionalLabel.style.display = 'inline';
-        } else {
-            authorLabel.style.display = 'none';
-            document.getElementById('author').required = true;
-            priceLabel.textContent = 'Price (e.g. R250)';
-            document.getElementById('price').placeholder = 'R250';
-            negotiableGroup.style.display = 'none';
-            isNegotiableInput.checked = false;
-            imageOptionalLabel.style.display = 'none';
-        }
-    });
-
-    // Seller Select
-    const sellerSelect = document.getElementById('seller-select');
-    const sellerInput = document.getElementById('seller');
-    const contactInput = document.getElementById('contact');
-
-    // Cropper elements
-    const cropperModal = document.getElementById('cropper-modal');
-    const cropperImage = document.getElementById('cropper-image');
-    const cropCancelBtn = document.getElementById('crop-cancel');
-    const cropConfirmBtn = document.getElementById('crop-confirm');
-    let cropper;
-
-    // Book List elements
-    const loadBooksBtn = document.getElementById('load-books-btn');
-    const bookListDiv = document.getElementById('book-list');
-    const searchInput = document.getElementById('search-input');
-
-    // Sellers elements
-    const migrateBtn = document.getElementById('migrate-btn');
-    const sellersListDiv = document.getElementById('sellers-list');
-
-    // Store data locally
-    let allBooks = [];
-    let sellersData = {};
-
-    // --- Password Persistence ---
-    function loadPassword() {
-        const stored = localStorage.getItem('adminAuth');
-        if (stored) {
-            try {
-                const { password, expiry } = JSON.parse(stored);
-                if (Date.now() < expiry) {
-                    document.getElementById('password').value = password;
-                    return password;
-                } else {
-                    localStorage.removeItem('adminAuth');
-                }
-            } catch (e) {
-                localStorage.removeItem('adminAuth');
-            }
-        }
-        return '';
-    }
-
-    function savePassword(password) {
-        if (!password) return;
-        const expiry = Date.now() + (3 * 24 * 60 * 60 * 1000); // 3 days
-        localStorage.setItem('adminAuth', JSON.stringify({ password, expiry }));
-    }
-
-    // Load password on init
-    loadPassword();
-
-    // --- Sellers Logic ---
-
-    migrateBtn.addEventListener('click', migrateSellers);
-
-    async function migrateSellers() {
-        const password = document.getElementById('password').value;
-        if (!password) { alert('Enter Admin Password'); return; }
-        savePassword(password);
-
-        migrateBtn.textContent = 'Processing...';
-        migrateBtn.disabled = true;
-
-        try {
-            // First, trigger migration/sync
-            const response = await fetch(`${WORKER_URL}admin/migrate`, {
-                method: 'POST',
-                headers: { 'X-Admin-Password': password }
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                sellersData = data.sellers;
-                renderSellers(sellersData);
-                populateSellerSelect(sellersData);
-                alert('Migration/Sync Complete!');
+        // Basic check via a fetch to books
+        fetch(workerUrl + 'admin/books', {
+            headers: { 'X-Admin-Password': adminPass }
+        }).then(res => {
+            if (res.ok) {
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('main-section').style.display = 'block';
+                fetchData();
             } else {
-                alert(data.error || 'Failed to migrate.');
+                document.getElementById('auth-error').style.display = 'block';
             }
+        }).catch(err => {
+            alert('Network error');
+        });
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+
+        document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    async function fetchData() {
+        try {
+            // Fetch Stats
+            const statRes = await fetch(workerUrl + 'stats');
+            const stats = await statRes.json();
+            document.getElementById('stat-active').textContent = stats.activeCount || 0;
+            document.getElementById('stat-pending').textContent = stats.pendingCount || 0;
+            document.getElementById('stat-sellers').textContent = stats.sellersCount || 0;
+            document.getElementById('stat-sold').textContent = stats.sold || 0;
+
+            // Fetch Books
+            const bookRes = await fetch(workerUrl + 'admin/books', {
+                headers: { 'X-Admin-Password': adminPass }
+            });
+            const books = await bookRes.json();
+
+            const pending = books.filter(b => b.status === 'pending');
+            const active = books.filter(b => b.status === 'active' || !b.status);
+
+            renderTable('pending-tbody', pending, true);
+            renderTable('inventory-tbody', active, false);
+
         } catch (err) {
             console.error(err);
-            alert('Network error during migration.');
-        } finally {
-            migrateBtn.textContent = 'Migrate / Refresh Sellers';
-            migrateBtn.disabled = false;
         }
     }
 
-    // Also try to load sellers without migration if we have them?
-    // Or just separate Load vs Migrate. For now, "Migrate/Refresh" does both via the migrate endpoint which is safe to run repeatedly.
-    // Actually, let's have a separate load function for initial view, but migrate endpoint returns updated list anyway.
-
-    function renderSellers(sellers) {
-        if (!sellers || Object.keys(sellers).length === 0) {
-            sellersListDiv.innerHTML = '<p style="text-align: center; color: #777;">No sellers found.</p>';
+    function renderTable(tbodyId, data, isPending) {
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No records found.</td></tr>`;
             return;
         }
 
-        let html = `
-            <table class="seller-table">
-                <thead>
-                    <tr>
-                        <th>Seller Name</th>
-                        <th>WhatsApp</th>
-                        <th>Code</th>
-                        <th>Books</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        Object.values(sellers).forEach(s => {
-            html += `
-                <tr>
-                    <td>${s.name}</td>
-                    <td>${s.contact}</td>
-                    <td style="font-family: monospace; color: var(--primary-color); font-weight: bold;">${s.code}</td>
-                    <td>${s.count}</td>
-                </tr>
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><img src="${workerUrl}image?id=${item.id}" style="width:50px; height:70px; object-fit:cover; border-radius:4px;"></td>
+                <td>
+                    <strong>${item.title}</strong><br>
+                    <small>${item.author || ''}</small>
+                </td>
+                <td>${item.seller}<br><small>${item.contact}</small></td>
+                <td>R${item.price}</td>
+                <td>
+                    ${isPending ? `<button class="action-btn btn-approve" onclick="approveBook('${item.id}')">Approve</button>` : ''}
+                    <button class="action-btn btn-reject" onclick="deleteBook('${item.id}')">${isPending ? 'Reject' : 'Delete'}</button>
+                </td>
             `;
-        });
-
-        html += '</tbody></table>';
-        sellersListDiv.innerHTML = html;
-    }
-
-    function populateSellerSelect(sellers) {
-        sellerSelect.innerHTML = '<option value="">-- New / Manual Entry --</option>';
-        Object.values(sellers).forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.contact; // Use phone as key
-            opt.textContent = `${s.name} (${s.contact})`;
-            sellerSelect.appendChild(opt);
+            tbody.appendChild(tr);
         });
     }
 
-    sellerSelect.addEventListener('change', function() {
-        const contact = this.value;
-        if (contact && sellersData[contact]) {
-            const s = sellersData[contact];
-            sellerInput.value = s.name;
-            contactInput.value = s.contact;
-        } else {
-            // Optional: clear fields or leave them?
-            // Better to leave them so user can edit if they accidentally selected wrong one.
-            // But maybe clear logic is expected. Let's just fill if selected.
-        }
-    });
-
-    // --- Image Cropping Logic ---
-
-    imageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                cropperImage.src = evt.target.result;
-                cropperModal.style.display = 'block';
-
-                if (cropper) {
-                    cropper.destroy();
-                }
-                cropper = new Cropper(cropperImage, {
-                    aspectRatio: NaN, // Free form
-                    viewMode: 1,
-                });
-            }
-            reader.readAsDataURL(file);
-            // Clear input so same file can be selected again if needed
-            imageInput.value = '';
-        }
-    });
-
-    cropCancelBtn.addEventListener('click', function() {
-        cropperModal.style.display = 'none';
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-    });
-
-    cropConfirmBtn.addEventListener('click', function() {
-        if (cropper) {
-            // Get cropped canvas
-            const canvas = cropper.getCroppedCanvas({
-                maxWidth: 800,
-                maxHeight: 800,
-            });
-
-            // Convert to Base64 (JPEG for better compression)
-            const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-
-            // Set preview and hidden input
-            imagePreview.src = base64Image;
-            imagePreview.style.display = 'inline-block';
-            imageBase64Input.value = base64Image;
-
-            // Close modal
-            cropperModal.style.display = 'none';
-            cropper.destroy();
-            cropper = null;
-        }
-    });
-
-    // --- Form Submission (Add & Update) ---
-
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        // Hide previous messages
-        messageDiv.style.display = 'none';
-        messageDiv.className = 'message';
-        submitBtn.disabled = true;
-
-        const isEditMode = !!bookIdInput.value;
-        submitBtn.textContent = isEditMode ? 'Updating...' : 'Uploading...';
-
-        const password = document.getElementById('password').value;
-        savePassword(password);
-
-        const type = document.getElementById('listing-type').value;
-        const title = document.getElementById('title').value;
-        const author = document.getElementById('author').value;
-        const price = document.getElementById('price').value;
-        const isNegotiable = document.getElementById('is-negotiable').checked;
-        const seller = document.getElementById('seller').value;
-        const contact = document.getElementById('contact').value;
-        const base64Image = imageBase64Input.value;
-
-        const isLookingFor = type === 'looking_for';
-
-        if (!base64Image && !isEditMode && !isLookingFor) {
-            showMessage('Please select and crop an image.', 'error');
-            resetSubmitBtn(isEditMode);
-            return;
-        }
-
-        const payload = {
-            type,
-            title,
-            author: author || 'Not provided',
-            price,
-            isNegotiable,
-            seller,
-            contact,
-            image: base64Image
-        };
-
-        let url = WORKER_URL;
-        let method = 'POST';
-
-        if (isEditMode) {
-            url += `?id=${bookIdInput.value}`;
-            method = 'PUT';
-        }
-
+    async function approveBook(id) {
+        if (!confirm('Approve this book?')) return;
         try {
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Password': password
-                },
-                body: JSON.stringify(payload)
+            const res = await fetch(`${workerUrl}admin/approve?id=${id}`, {
+                method: 'PUT',
+                headers: { 'X-Admin-Password': adminPass }
             });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showMessage(isEditMode ? 'Book updated successfully!' : 'Book added successfully!', 'success');
-                // Also show code if new
-                if (result.code) {
-                    alert(`Book added! Seller Code: ${result.code}`);
-                }
-                resetForm();
-                loadBooks(); // Refresh list
-
-                // Refresh sellers list quietly if possible, or just user clicks refresh
-                // Let's trigger a fetch for sellers if we can
-                fetchSellersOnly(password);
+            if (res.ok) {
+                fetchData();
             } else {
-                showMessage(result.error || 'Operation failed.', 'error');
+                alert('Failed to approve');
             }
         } catch (err) {
             console.error(err);
-            showMessage('Network error. Please try again.', 'error');
-        } finally {
-            resetSubmitBtn(isEditMode);
         }
-    });
-
-    function resetSubmitBtn(isEditMode) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = isEditMode ? 'Update Book' : 'Upload Book';
     }
 
-    function resetForm() {
-        form.reset();
-        bookIdInput.value = '';
-        imagePreview.style.display = 'none';
-        imageBase64Input.value = '';
-        formTitle.textContent = 'Add New Book';
-        submitBtn.textContent = 'Upload Book';
-        cancelEditBtn.style.display = 'none';
-        sellerSelect.value = "";
-
-        const typeSelectEl = document.getElementById('listing-type');
-        typeSelectEl.value = 'buy';
-        typeSelectEl.dispatchEvent(new Event('change'));
-
-        loadPassword(); // restore password
-    }
-
-    cancelEditBtn.addEventListener('click', resetForm);
-
-    function showMessage(text, type) {
-        messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
-        messageDiv.style.display = 'block';
-    }
-
-    // --- Fetch Sellers Helper ---
-    async function fetchSellersOnly(password) {
+    async function deleteBook(id) {
+        if (!confirm('Are you sure you want to delete this listing permanently?')) return;
         try {
-            const response = await fetch(`${WORKER_URL}sellers`, {
-                headers: { 'X-Admin-Password': password }
-            });
-            if (response.ok) {
-                sellersData = await response.json();
-                renderSellers(sellersData);
-                populateSellerSelect(sellersData);
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    // --- Book List Logic ---
-
-    loadBooksBtn.addEventListener('click', loadBooks);
-
-    async function loadBooks() {
-        loadBooksBtn.textContent = 'Loading...';
-        loadBooksBtn.disabled = true;
-
-        try {
-            const response = await fetch(WORKER_URL); // GET request
-            if (response.ok) {
-                allBooks = await response.json();
-                renderBooks(allBooks);
-            } else {
-                alert('Failed to load books.');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Network error loading books.');
-        } finally {
-            loadBooksBtn.textContent = 'Load/Refresh Books';
-            loadBooksBtn.disabled = false;
-        }
-    }
-
-    function renderBooks(books) {
-        bookListDiv.innerHTML = '';
-        if (books.length === 0) {
-            bookListDiv.innerHTML = '<p style="text-align: center; color: #777;">No books found.</p>';
-            return;
-        }
-
-        books.forEach(book => {
-            const div = document.createElement('div');
-            div.className = 'book-item';
-
-            // Use lazy loading image endpoint
-            let imgSrc = `${WORKER_URL}image?id=${book.id}`;
-            // If no image is provided and it's a "looking_for" book, use a placeholder
-            if (book.type === 'looking_for' && !book.image) {
-                imgSrc = 'https://via.placeholder.com/300x400?text=Looking+For+Book';
-            }
-
-            const badgeHtml = book.type === 'looking_for'
-                ? `<span style="background-color: #ff9800; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-bottom: 5px; display: inline-block;">Looking For</span>`
-                : `<span style="background-color: #4CAF50; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-bottom: 5px; display: inline-block;">Selling</span>`;
-
-            div.innerHTML = `
-                ${badgeHtml}
-                <img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=No+Cover'">
-                <h3>${book.title}</h3>
-                <p><strong>Author:</strong> ${book.author}</p>
-                <p><strong>Price:</strong> ${book.price} ${book.isNegotiable ? '(Negotiable)' : ''}</p>
-                <p><strong>Seller/Buyer:</strong> ${book.seller}</p>
-                <div class="book-actions">
-                    <button class="btn-edit" onclick="editBook('${book.id}')">Edit</button>
-                    <button class="btn-delete" onclick="deleteBook('${book.id}')">Delete</button>
-                </div>
-            `;
-            bookListDiv.appendChild(div);
-        });
-    }
-
-    // Search Filter
-    searchInput.addEventListener('input', function(e) {
-        const term = e.target.value.toLowerCase();
-        const filtered = allBooks.filter(book =>
-            book.title.toLowerCase().includes(term) ||
-            book.author.toLowerCase().includes(term) ||
-            book.seller.toLowerCase().includes(term)
-        );
-        renderBooks(filtered);
-    });
-
-    // Delete Function
-    window.deleteBook = async function(id) {
-        if (!confirm('Are you sure you want to delete this book?')) return;
-
-        const password = document.getElementById('password').value;
-        if (!password) {
-            alert('Please enter the Admin Password in the form above first.');
-            document.getElementById('password').focus();
-            return;
-        }
-
-        savePassword(password);
-
-        try {
-            const response = await fetch(`${WORKER_URL}?id=${id}`, {
+            const res = await fetch(`${workerUrl}?id=${id}`, {
                 method: 'DELETE',
-                headers: {
-                    'X-Admin-Password': password
-                }
+                headers: { 'X-Admin-Password': adminPass }
             });
-            const result = await response.json();
-
-            if (response.ok) {
-                alert('Book deleted successfully');
-                loadBooks(); // Refresh list
-                fetchSellersOnly(password); // Refresh counts
+            if (res.ok) {
+                fetchData();
             } else {
-                alert(result.error || 'Failed to delete book');
+                alert('Failed to delete');
             }
         } catch (err) {
             console.error(err);
-            alert('Network error.');
         }
-    };
-
-    // Edit Function
-    window.editBook = async function(id) {
-        try {
-            submitBtn.textContent = 'Loading...';
-            submitBtn.disabled = true;
-
-            // Fetch full book details (including base64 image) from server
-            const response = await fetch(`${WORKER_URL}?id=${id}`);
-            if (!response.ok) {
-                 alert('Failed to load book details');
-                 resetSubmitBtn(false);
-                 return;
-            }
-            const book = await response.json();
-
-            // Populate form
-            document.getElementById('listing-type').value = book.type || 'buy';
-            document.getElementById('listing-type').dispatchEvent(new Event('change'));
-            document.getElementById('title').value = book.title;
-            document.getElementById('author').value = book.author === 'Not provided' ? '' : book.author;
-            document.getElementById('price').value = book.price;
-            document.getElementById('is-negotiable').checked = !!book.isNegotiable;
-            document.getElementById('seller').value = book.seller;
-            document.getElementById('contact').value = book.contact || '';
-
-            bookIdInput.value = book.id;
-
-            // Handle Image - Populate with the fetched base64 string so editing works as expected
-            imagePreview.src = book.image;
-            imagePreview.style.display = 'inline-block';
-            imageBase64Input.value = book.image;
-
-            // Change UI state
-            formTitle.textContent = 'Edit Book';
-            submitBtn.textContent = 'Update Book';
-            submitBtn.disabled = false;
-            cancelEditBtn.style.display = 'inline-block';
-
-            // Scroll to form
-            document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
-        } catch(e) {
-            console.error(e);
-            alert("Error fetching book details");
-            resetSubmitBtn(false);
-        }
-    };
-
-    // Wait for config
-    window.appConfigPromise.then(config => {
-        WORKER_URL = config.workerUrl;
-        if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
-        // Attempt auto-load sellers if password exists
-        const autoPass = loadPassword();
-        if(autoPass) fetchSellersOnly(autoPass);
-    });
-
+    }
 </script>
-
 </body>
 </html>
