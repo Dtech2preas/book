@@ -245,6 +245,7 @@
                         <div style="display: flex; gap: 10px; margin-top: 5px;">
                             <button type="button" onclick="mapOcrNew('new-title')" style="padding: 5px; font-size: 0.8rem; width: auto;">Set Title</button>
                             <button type="button" onclick="mapOcrNew('new-author')" style="padding: 5px; font-size: 0.8rem; width: auto;">Set Author</button>
+                            <button type="button" onclick="copyOcrNew()" style="padding: 5px; font-size: 0.8rem; width: auto;">Copy Text</button>
                         </div>
                     </div>
 
@@ -344,6 +345,21 @@
             document.getElementById(field).value = selectedText;
         } else {
             alert('Please highlight some text first.');
+        }
+    };
+
+    window.copyOcrNew = function() {
+        const ocrText = document.getElementById('ocr-result-new');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        const textToCopy = selectedText || ocrText.value;
+        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast('Text copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        } else {
+            showToast('No valid text to copy.');
         }
     };
 
@@ -528,8 +544,11 @@
         if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
 
         if (sessionStorage.getItem('sellerCode')) {
-             handleLogin(sessionStorage.getItem('sellerCode'));
+             loadBooks(sessionStorage.getItem('sellerCode'));
         }
+    }).catch(err => {
+        console.error("Config load error:", err);
+        showToast("System configuration failed to load.");
     });
 </script>
 

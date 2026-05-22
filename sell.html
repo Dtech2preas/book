@@ -178,6 +178,7 @@
                 <div class="ocr-actions">
                     <button type="button" onclick="mapOcrText('title')">Set Title</button>
                     <button type="button" onclick="mapOcrText('author')">Set Author</button>
+                    <button type="button" onclick="copyOcrText()">Copy Text</button>
                 </div>
             </div>
         </div>
@@ -213,7 +214,15 @@
 
 <script>
     let base64Image = null;
-    const workerUrl = MAIN_WORKER_URL;
+    let workerUrl = '';
+
+    window.appConfigPromise.then(config => {
+        workerUrl = config.workerUrl;
+        if (!workerUrl.endsWith('/')) workerUrl += '/';
+    }).catch(err => {
+        console.error("Config load error:", err);
+        alert("System still loading or failed to load. Please refresh.");
+    });
 
     // Image Upload & OCR
     document.getElementById('image').addEventListener('change', function(e) {
@@ -256,9 +265,29 @@
         }
     }
 
+    function copyOcrText() {
+        const ocrText = document.getElementById('ocr-result');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        const textToCopy = selectedText || ocrText.value;
+        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Text copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        } else {
+            alert('No valid text to copy.');
+        }
+    }
+
     // Submit Form
     document.getElementById('sell-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!workerUrl) {
+            alert("System configuration not ready, please wait a moment and try again.");
+            return;
+        }
 
         const btn = document.getElementById('submit-btn');
         btn.textContent = 'Submitting...';
