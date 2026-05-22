@@ -3,287 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sell Books - DTECH Services</title>
+    <title>Sell Books - DTECH</title>
     <script src="config.js"></script>
+    <!-- Tesseract.js for OCR -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         :root {
             --primary-color: #00D2FF;
             --primary-hover: #00B4D8;
-            --secondary-color: #A0A0A0;
-            --bg-color: #0B0F19;
-            --card-bg: #111827;
-            --form-input-bg: #1F2937;
-            --border-color: #374151;
-            --success-color: #10B981;
-            --warning-color: #F59E0B;
+            --secondary-color: #E0E0E0;
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --border-color: #333333;
         }
-
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--bg-color);
-            color: #FFFFFF;
-            background-image: radial-gradient(circle at top right, rgba(0, 210, 255, 0.05), transparent 400px);
+            color: var(--secondary-color);
         }
-
         header {
-            background-color: #030712;
+            background-color: #000000;
+            color: var(--primary-color);
             padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--primary-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 50;
         }
-
         header a {
             color: var(--primary-color);
             text-decoration: none;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: color 0.2s;
+            font-weight: bold;
         }
-
-        header a:hover {
-            color: var(--primary-hover);
-        }
-
-        .manual-btn {
-            background: transparent;
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            width: auto;
-            transition: all 0.2s;
-        }
-
-        .manual-btn:hover {
-            background: rgba(0, 210, 255, 0.1);
-        }
-
         .container {
-            max-width: 750px;
-            margin: 2.5rem auto;
-            padding: 2.5rem;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
             background-color: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-
-        h1 {
-            font-size: 1.8rem;
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #FFF, var(--primary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .container > p {
-            color: var(--secondary-color);
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .container { padding: 1.5rem; margin: 1rem; }
-        }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
-        .form-group.full-width {
-            grid-column: span 2;
-        }
-        @media (max-width: 600px) {
-            .form-group.full-width { grid-column: span 1; }
-        }
-
         label {
             display: block;
             margin-bottom: 0.5rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #E5E7EB;
+            font-weight: bold;
         }
-
-        input[type="text"], input[type="number"], input[type="file"] {
+        input[type="text"], input[type="number"], input[type="file"], select {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.8rem;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: var(--form-input-bg);
+            border-radius: 5px;
+            background-color: var(--bg-color);
             color: white;
-            font-size: 1rem;
             box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        input[type="text"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
-        }
-
-        input[type="file"] {
-            padding: 0.5rem;
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
         }
 
-        /* OCR Utilities Dashboard */
+        /* OCR Section */
         .ocr-container {
             display: none;
-            margin-top: 1.25rem;
-            padding: 1.25rem;
-            background-color: #1F2937;
-            border-radius: 8px;
-            border: 1px solid #4B5563;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
         }
-
-        .ocr-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-        }
-
-        .ocr-title-area {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #374151;
-            color: var(--primary-color);
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 0.75rem;
-            font-weight: bold;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .info-tooltip {
-            display: none;
-            position: absolute;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #030712;
-            color: #F3F4F6;
-            padding: 0.8rem;
-            border-radius: 6px;
-            border: 1px solid var(--primary-color);
-            font-size: 0.8rem;
-            width: 260px;
-            font-weight: normal;
-            line-height: 1.4;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-
-        .info-icon:hover .info-tooltip {
-            display: block;
-        }
-
         .ocr-text {
             width: 100%;
-            height: 110px;
+            height: 100px;
             background-color: var(--bg-color);
-            color: #E5E7EB;
+            color: var(--secondary-color);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 0.75rem;
+            padding: 0.5rem;
             box-sizing: border-box;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
             overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.9rem;
-            resize: none;
         }
-
         .ocr-actions {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
         }
-
         .ocr-actions button {
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
+            padding: 0.5rem;
+            font-size: 0.9rem;
             width: auto;
-            background-color: #374151;
-            color: white;
-            border: 1px solid var(--border-color);
-        }
-
-        .ocr-actions button:hover {
-            background-color: #4B5563;
-            border-color: #6B7280;
         }
 
         #image-preview {
             max-width: 100%;
-            max-height: 220px;
+            max-height: 300px;
             display: none;
             margin-top: 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            object-fit: contain;
+            border-radius: 5px;
         }
 
-        #submit-btn {
-            background-color: var(--primary-color);
-            color: #030712;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1.05rem;
-            width: 100%;
-            transition: all 0.2s;
-            margin-top: 1rem;
-            box-shadow: 0 4px 14px 0 rgba(0, 210, 255, 0.3);
-        }
-
-        #submit-btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        #submit-btn:disabled {
-            background-color: #374151;
-            color: #9CA3AF;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-        /* System Modals */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -292,129 +125,24 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(3, 7, 18, 0.85);
-            backdrop-filter: blur(4px);
+            background-color: rgba(0,0,0,0.8);
         }
-
         .modal-content {
             background-color: var(--card-bg);
-            margin: 10% auto;
-            padding: 2.5rem;
-            border: 1px solid var(--primary-color);
-            width: 90%;
-            max-width: 480px;
-            text-align: center;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
-            position: relative;
-            animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes modalSlide {
-            from { transform: translateY(-30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal h2 {
-            color: var(--success-color);
-            margin-top: 0;
-        }
-
-        .code-display {
-            font-size: 3.2rem;
-            color: var(--primary-color);
-            letter-spacing: 6px;
-            margin: 1.5rem 0;
-            font-weight: 800;
-            background: rgba(0, 210, 255, 0.05);
-            padding: 0.5rem;
-            border-radius: 8px;
-            border: 1px dashed rgba(0, 210, 255, 0.3);
-            font-family: monospace;
-        }
-
-        .modal-footer-notice {
-            background-color: #1F2937;
-            padding: 0.85rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: #D1D5DB;
-            border-left: 4px solid var(--primary-color);
-            text-align: left;
-            margin-top: 1.5rem;
-            line-height: 1.4;
-        }
-
-        .close-modal-btn {
-            background-color: white;
-            color: #000;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-weight: 700;
-            margin-top: 1.5rem;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        /* Manual Drawer Panel */
-        .drawer {
-            display: none;
-            position: fixed;
-            right: 0;
-            top: 0;
-            width: 100%;
-            max-width: 450px;
-            height: 100%;
-            background-color: var(--card-bg);
-            z-index: 150;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-            border-left: 1px solid var(--border-color);
-            box-sizing: border-box;
+            margin: 15% auto;
             padding: 2rem;
-            overflow-y: auto;
-            animation: drawerSlide 0.25s ease-out;
+            border: 1px solid var(--primary-color);
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            border-radius: 10px;
         }
-
-        @keyframes drawerSlide {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-        }
-
-        .drawer-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .drawer-header h3 {
-            margin: 0;
+        .code-display {
+            font-size: 3rem;
             color: var(--primary-color);
-        }
-
-        .close-drawer {
-            background: transparent;
-            border: none;
-            color: var(--secondary-color);
-            font-size: 1.5rem;
-            cursor: pointer;
-            width: auto;
-            padding: 0;
-        }
-
-        .manual-section {
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            color: #D1D5DB;
-        }
-
-        .manual-section h4 {
-            color: white;
-            margin-bottom: 0.5rem;
+            letter-spacing: 5px;
+            margin: 1rem 0;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -422,102 +150,65 @@
 
 <header>
     <div><a href="index.html">← Back to Home</a></div>
-    <h2>DTECH Factory</h2>
-    <div><button type="button" class="manual-btn" onclick="toggleManual(true)">User Manual</button></div>
+    <h2>Sell Your Books</h2>
+    <div style="width: 100px;"></div>
 </header>
 
 <div class="container">
-    <h1>List an Academic Resource</h1>
-    <p>Upload your textbook configuration metadata. The entry will remain queued in the database layout as pending until cleared by administrative moderation.</p>
+    <p>Upload your textbook to DTECH. Your submission will be reviewed by admins before it appears live.</p>
 
     <form id="sell-form">
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="sellerName">Your Full Name</label>
-                <input type="text" id="sellerName" required placeholder="e.g. Lefa Ndlovu">
-            </div>
-            <div class="form-group">
-                <label for="contact">WhatsApp Number</label>
-                <input type="text" id="contact" required placeholder="e.g. 0712345678">
-            </div>
+        <div class="form-group">
+            <label for="sellerName">Your Full Name</label>
+            <input type="text" id="sellerName" required placeholder="e.g. Jane Doe">
+        </div>
+        <div class="form-group">
+            <label for="contact">WhatsApp Number</label>
+            <input type="text" id="contact" required placeholder="e.g. 0712345678">
         </div>
 
-        <div class="form-group full-width">
+        <div class="form-group">
             <label for="image">Book Image (Cover or Info Page)</label>
             <input type="file" id="image" accept="image/*" required>
-            <img id="image-preview" alt="Preview Processing Layout">
+            <img id="image-preview" alt="Preview">
 
             <div id="ocr-section" class="ocr-container">
-                <div class="ocr-header">
-                    <div class="ocr-title-area">
-                        <label style="margin-bottom:0;">Automated Extraction Interface</label>
-                        <span class="info-icon">i
-                            <span class="info-tooltip">
-                                <strong>System Note:</strong> This pipeline uses an embedded client-side vision engine to parse details from the text layout. Never trust automated scans blindly. Verify parameters manually and select specific textual lines to populate variables below.
-                            </span>
-                        </span>
-                    </div>
-                </div>
-                <textarea id="ocr-result" class="ocr-text" readonly>Initializing engine parsing parameters...</textarea>
+                <p><strong>Extracted Text (OCR)</strong></p>
+                <textarea id="ocr-result" class="ocr-text" readonly>Scanning image...</textarea>
                 <div class="ocr-actions">
-                    <button type="button" onclick="mapOcrText('title')">Extract to Title</button>
-                    <button type="button" onclick="mapOcrText('author')">Extract to Author</button>
-                    <button type="button" onclick="copyOcrText()">Copy Selection</button>
+                    <button type="button" onclick="mapOcrText('title')">Set Title</button>
+                    <button type="button" onclick="mapOcrText('author')">Set Author</button>
+                    <button type="button" onclick="copyOcrText()">Copy Text</button>
                 </div>
             </div>
         </div>
 
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="title">Book Title</label>
-                <input type="text" id="title" required placeholder="e.g. Financial Accounting">
-            </div>
-            <div class="form-group">
-                <label for="author">Author / Edition</label>
-                <input type="text" id="author" required placeholder="e.g. Stice & Stice, 19th Ed">
-            </div>
-            <div class="form-group full-width">
-                <label for="price">Price (ZAR)</label>
-                <input type="number" id="price" required placeholder="e.g. 450">
-            </div>
+        <div class="form-group">
+            <label for="title">Book Title</label>
+            <input type="text" id="title" required placeholder="e.g. Introduction to Calculus">
+        </div>
+        <div class="form-group">
+            <label for="author">Author(s)</label>
+            <input type="text" id="author" required placeholder="e.g. James Stewart">
+        </div>
+        <div class="form-group">
+            <label for="price">Price (R)</label>
+            <input type="number" id="price" required placeholder="e.g. 450">
         </div>
 
-        <button type="submit" id="submit-btn">Commit to Pending Queue</button>
+        <button type="submit" id="submit-btn">Submit Book</button>
     </form>
 </div>
 
-<div id="manualDrawer" class="drawer">
-    <div class="drawer-header">
-        <h3>Platform User Manual</h3>
-        <button class="close-drawer" onclick="toggleManual(false)">×</button>
-    </div>
-    <div class="manual-section">
-        <h4>1. The Upload Phase</h4>
-        <p>Fill out your metadata or use the automated computer-vision extraction engine. When you upload a picture, our local script reads text from the book cover to help auto-fill inputs.</p>
-    </div>
-    <div class="manual-section">
-        <h4>2. The Security Passkey Node</h4>
-        <p>Upon form submission, the database generates a 4-digit token configuration unique to your student profile. Keep this token safe.</p>
-    </div>
-    <div class="manual-section">
-        <h4>3. Execution and Deletion Hub</h4>
-        <p>To view your live database parameters, edit listings, or completely erase a book listing once sold, select the <strong>Blue Profile Icon</strong> located on the top right quadrant of the main interface screen. Log in with your phone and token code.</p>
-    </div>
-</div>
-
+<!-- Success Modal -->
 <div id="successModal" class="modal">
     <div class="modal-content">
-        <h2>Payload Logged Successfully!</h2>
-        <p>Your listing configuration status has been successfully routed to the <strong>Administrative Moderation Queue</strong>.</p>
-        <p>Secure Management Access Code:</p>
+        <h2>Upload Successful!</h2>
+        <p>Your book is now <strong>Pending Approval</strong>.</p>
+        <p>Save this 4-digit code to manage your listings:</p>
         <div class="code-display" id="sellerCodeDisplay">XXXX</div>
-        <p style="color: var(--warning-color); font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem;">⚠️ Backup this passcode immediately to retain management permissions.</p>
-        
-        <div class="modal-footer-notice">
-            <strong>System Guidance:</strong> You can manage, verify, or instantly purge this or future resource records via the <strong>Blue Profile Icon</strong> on the home interface screen navigation panel. Make sure to read the user manual for complete instructions.
-        </div>
-        
-        <button class="close-modal-btn" onclick="window.location.href='index.html'">Acknowledge & Exit</button>
+        <p>Use this code on the <a href="seller-manage.html" style="color:var(--primary-color);">Seller Manage</a> page.</p>
+        <button onclick="window.location.href='index.html'" style="margin-top:1rem;">Back to Home</button>
     </div>
 </div>
 
@@ -529,16 +220,11 @@
         workerUrl = config.workerUrl;
         if (!workerUrl.endsWith('/')) workerUrl += '/';
     }).catch(err => {
-        console.error("Config load infrastructure failed:", err);
-        alert("Configuration pipeline dropped. Re-instantiating script link.");
+        console.error("Config load error:", err);
+        alert("System still loading or failed to load. Please refresh.");
     });
 
-    // Control View Layer Drawers
-    function toggleManual(show) {
-        document.getElementById('manualDrawer').style.display = show ? 'block' : 'none';
-    }
-
-    // Image Upload & Local Tesseract Engine Processing
+    // Image Upload & OCR
     document.getElementById('image').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -551,31 +237,31 @@
             preview.src = base64Image;
             preview.style.display = 'block';
 
+            // Start OCR
             const ocrSection = document.getElementById('ocr-section');
             const ocrResult = document.getElementById('ocr-result');
             ocrSection.style.display = 'block';
-            ocrResult.value = "Vision processing initializing... please wait.";
+            ocrResult.value = "Scanning image...";
 
             try {
-                const result = await Tesseract.recognize(base64Image, 'eng');
-                ocrResult.value = result.data.text || "No text could be processed from layout.";
-                ocrResult.removeAttribute('readonly'); 
+                const result = await Tesseract.recognize(base64Image, 'eng', { logger: m => console.log(m) });
+                ocrResult.value = result.data.text;
+                ocrResult.removeAttribute('readonly'); // Allow user to manually copy
             } catch (err) {
-                console.error("OCR execution fault:", err);
-                ocrResult.value = "Vision parser dropped execution loop.";
+                console.error(err);
+                ocrResult.value = "Failed to extract text.";
             }
         };
         reader.readAsDataURL(file);
     });
 
-    // Extract Text Selection Strings into Form Node Parameters
     function mapOcrText(field) {
         const ocrText = document.getElementById('ocr-result');
         const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
         if (selectedText) {
             document.getElementById(field).value = selectedText;
         } else {
-            alert('Highlight targeted text strings inside the extraction window first.');
+            alert('Please highlight some text in the extracted text box first.');
         }
     }
 
@@ -583,30 +269,32 @@
         const ocrText = document.getElementById('ocr-result');
         const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
         const textToCopy = selectedText || ocrText.value;
-        if (textToCopy && !textToCopy.startsWith("Vision processing")) {
+        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
             navigator.clipboard.writeText(textToCopy).then(() => {
-                alert('String buffered to local clipboard.');
+                alert('Text copied to clipboard!');
             }).catch(err => {
-                console.error('Buffer routing failed:', err);
+                console.error('Failed to copy text: ', err);
             });
+        } else {
+            alert('No valid text to copy.');
         }
     }
 
-    // Process Forms via Worker Routing Target
+    // Submit Form
     document.getElementById('sell-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
         if (!workerUrl) {
-            alert("Worker connection stream still instantiating.");
+            alert("System configuration not ready, please wait a moment and try again.");
             return;
         }
 
         const btn = document.getElementById('submit-btn');
-        btn.textContent = 'Pushing payload to Cloudflare infrastructure...';
+        btn.textContent = 'Submitting...';
         btn.disabled = true;
 
         const payload = {
-            type: 'buy', // Map validation parameter
+            type: 'buy',
             seller: document.getElementById('sellerName').value,
             contact: document.getElementById('contact').value,
             title: document.getElementById('title').value,
@@ -627,14 +315,14 @@
                 document.getElementById('sellerCodeDisplay').textContent = data.code;
                 document.getElementById('successModal').style.display = 'block';
             } else {
-                alert('Server validation dropped: ' + data.error);
-                btn.textContent = 'Commit to Pending Queue';
+                alert('Error: ' + data.error);
+                btn.textContent = 'Submit Book';
                 btn.disabled = false;
             }
         } catch (err) {
-            console.error("Networking payload exception:", err);
-            alert('Cloudflare Worker edge timeout/network down.');
-            btn.textContent = 'Commit to Pending Queue';
+            console.error(err);
+            alert('Network error.');
+            btn.textContent = 'Submit Book';
             btn.disabled = false;
         }
     });
