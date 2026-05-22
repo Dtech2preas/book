@@ -116,6 +116,21 @@ async function handleRequest(request) {
         return new Response(JSON.stringify(books.filter(b => b !== null)), { headers });
       }
 
+      // --- Admin Reports ---
+      if (url.pathname === '/admin/reports') {
+        const password = request.headers.get("X-Admin-Password");
+        if (password !== "admin-secret-123") {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+        const list = await BOOKS_KV.list({ prefix: "report:" });
+        const reports = await Promise.all(list.keys.map(async (key) => {
+          const value = await BOOKS_KV.get(key.name, { type: "json" });
+          if (!value) return null;
+          return { id: key.name, ...value };
+        }));
+        return new Response(JSON.stringify(reports.filter(r => r !== null)), { headers });
+      }
+
       if (url.pathname === '/stats') {
         const list = await BOOKS_KV.list({ prefix: "book:" });
         let booksCount = 0;
@@ -325,6 +340,28 @@ async function handleRequest(request) {
         return new Response(JSON.stringify(sellerBooks), { headers });
       }
 
+      // --- Report Endpoint ---
+      if (url.pathname === '/report') {
+        const body = await request.json();
+        const { bookId, reporterName, reporterPhone, reason } = body;
+
+        if (!bookId || !reporterName || !reporterPhone || !reason) {
+            return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers });
+        }
+
+        const reportId = `report:${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const reportData = {
+            bookId,
+            reporterName,
+            reporterPhone,
+            reason,
+            createdAt: new Date().toISOString()
+        };
+
+        await BOOKS_KV.put(reportId, JSON.stringify(reportData));
+        return new Response(JSON.stringify({ success: true, message: "Report submitted" }), { headers });
+      }
+
       // --- Add Book Endpoint ---
       const body = await request.json();
 
@@ -391,6 +428,58 @@ async function handleRequest(request) {
 
   if (request.method === 'DELETE') {
     try {
+      if (url.pathname === '/admin/reports') {
+          const password = request.headers.get("X-Admin-Password");
+          if (password !== "admin-secret-123") {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+          }
+
+          const id = url.searchParams.get("id");
+          if (!id) {
+            return new Response(JSON.stringify({ error: "Missing report ID" }), { status: 400, headers });
+          }
+
+          await BOOKS_KV.delete(id);
+          return new Response(JSON.stringify({ success: true, message: "Report dismissed" }), { headers });
+      }
+
+      if (url.pathname === '/seller/account') {
+          const sellerCodeHeader = request.headers.get("X-Seller-Code");
+          if (!sellerCodeHeader || sellerCodeHeader.length !== 4) {
+              return new Response(JSON.stringify({ error: "Invalid or missing seller code" }), { status: 401, headers });
+          }
+
+          // 1. Delete all books belonging to this seller
+          const list = await BOOKS_KV.list({ prefix: "book:" });
+          let deletedCount = 0;
+          for (const key of list.keys) {
+              const val = await BOOKS_KV.get(key.name, { type: "json" });
+              if (val && val.sellerCode === sellerCodeHeader) {
+                  await BOOKS_KV.delete(key.name);
+                  deletedCount++;
+              }
+          }
+
+          // 2. Remove seller from system:sellers map
+          let sellersMap = await BOOKS_KV.get("system:sellers", { type: "json" });
+          if (sellersMap) {
+              let updated = false;
+              for (const [contact, data] of Object.entries(sellersMap)) {
+                  if (data.code === sellerCodeHeader) {
+                      delete sellersMap[contact];
+                      updated = true;
+                      break;
+                  }
+              }
+              if (updated) {
+                  await BOOKS_KV.put("system:sellers", JSON.stringify(sellersMap));
+              }
+          }
+
+          // Update sold count just in case they were sold? We won't update sold count for account deletion to avoid inflating stats if they are just quitting.
+          return new Response(JSON.stringify({ success: true, message: `Account deleted. Removed ${deletedCount} listings.` }), { headers });
+      }
+
       const id = url.searchParams.get("id");
       if (!id) {
         return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400, headers });

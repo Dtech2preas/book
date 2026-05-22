@@ -292,9 +292,12 @@
     </div>
 
     <div id="manage-section" style="display: none;">
-        <div class="card" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+        <div class="card" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 1rem; flex-wrap: wrap; gap: 10px;">
             <span style="font-weight: bold; color: var(--primary-color);">Code: <span id="display-code"></span></span>
-            <button onclick="logout()" style="width: auto; padding: 0.5rem 1rem; background-color: #333; color: #fff;">Logout</button>
+            <div>
+                <button onclick="deleteAccount()" style="width: auto; padding: 0.5rem 1rem; background-color: #d32f2f; color: #fff; margin-right: 10px; font-size: 0.8rem;">Delete Account & Data</button>
+                <button onclick="logout()" style="width: auto; padding: 0.5rem 1rem; background-color: #333; color: #fff; font-size: 0.8rem;">Logout</button>
+            </div>
         </div>
 
 
@@ -622,6 +625,38 @@
         }
     };
 
+    window.deleteAccount = async function() {
+        if (!confirm('Are you ABSOLUTELY sure you want to delete your account? This will permanently delete ALL your listings and your personal data from our systems. This action CANNOT be undone.')) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            showToast('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WORKER_URL}seller/account`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Seller-Code': code
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Your account and all data have been deleted successfully.');
+                logout();
+            } else {
+                showToast(result.error || 'Failed to delete account.');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        }
+    };
+
     window.logout = function() {
         sessionStorage.removeItem('sellerCode');
         manageSection.style.display = 'none';
@@ -649,5 +684,6 @@
     });
 </script>
 
+<script src="terms-modal.js"></script>
 </body>
 </html>

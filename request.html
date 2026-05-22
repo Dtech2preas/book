@@ -243,6 +243,13 @@
             <label for="negotiable" style="margin: 0; font-weight: normal;">Negotiable</label>
         </div>
 
+        <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.9rem;">
+            <input type="checkbox" id="whatsappConsent" required style="width: auto; margin-top: 5px;">
+            <label for="whatsappConsent" style="font-weight: normal; margin: 0; line-height: 1.4;">
+                I understand that my WhatsApp number will be visible to other registered users of this platform for the purpose of buying/selling textbooks. I can delete my listing and data at any time.
+            </label>
+        </div>
+
         <button type="submit" id="submit-btn">Submit Request</button>
     </form>
 </div>
@@ -427,5 +434,13 @@
         }
     });
 </script>
+
+<footer>
+    <div style="margin-top: 10px; text-align: center; padding: 1rem; background-color: #000; border-top: 1px solid #333;">
+        <a href="javascript:void(0)" onclick="openTermsModal()" style="color: #2196F3; text-decoration: none; font-size: 0.85rem;">Terms of Use & Privacy Policy</a>
+    </div>
+</footer>
+
+<script src="terms-modal.js"></script>
 </body>
 </html>
