@@ -173,6 +173,87 @@ async function handleRequest(request) {
     try {
       const url = new URL(request.url);
 
+      // --- Extract Text Endpoint (Groq API) ---
+      if (url.pathname === '/extract-text') {
+        const body = await request.json();
+        const base64Image = body.image;
+        if (!base64Image) {
+            return new Response(JSON.stringify({ error: "Missing image" }), { status: 400, headers });
+        }
+
+        // Get tokens from global variable GROQ_TOKENS (injected by Cloudflare)
+        let tokens = [];
+        if (typeof GROQ_TOKENS !== 'undefined') {
+            tokens = GROQ_TOKENS.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+        }
+
+        if (tokens.length === 0) {
+             return new Response(JSON.stringify({ error: "No Groq API tokens configured" }), { status: 500, headers });
+        }
+
+        // Shuffle tokens to distribute requests
+        const shuffledTokens = tokens.sort(() => 0.5 - Math.random());
+        let groqResponse = null;
+        let success = false;
+        let lastError = null;
+
+        const systemPrompt = `You are a helpful assistant that extracts book information from images. Return ONLY a valid JSON object with the following keys and string values: "title" (the book name), "author" (author name, if any), "editors" (editors, if any), "version" (book version or edition, if any), and "additional_info" (any other useful info found on the cover). If a piece of information is not found, leave the value as an empty string. Do not include markdown formatting like \`\`\`json.`;
+
+        for (const token of shuffledTokens) {
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.2-11b-vision-preview",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    { type: "text", text: systemPrompt },
+                                    { type: "image_url", image_url: { url: base64Image } }
+                                ]
+                            }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 500,
+                        top_p: 1,
+                        stream: false
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    let content = data.choices[0].message.content;
+                    // Sometimes models include markdown wrapper even if instructed not to
+                    content = content.replace(/^```json/m, '').replace(/```$/m, '').trim();
+                    groqResponse = JSON.parse(content);
+                    success = true;
+                    break; // Success, break out of retry loop
+                } else {
+                    const errorText = await response.text();
+                    lastError = `Groq API Error: ${response.status} ${errorText}`;
+                    console.error(lastError);
+                    // Continue to next token if rate limited or other error
+                }
+            } catch (err) {
+                lastError = err.message;
+                console.error(lastError);
+                // Continue to next token
+            }
+        }
+
+        if (success && groqResponse) {
+             return new Response(JSON.stringify({ success: true, data: groqResponse }), { headers });
+        } else {
+             return new Response(JSON.stringify({ error: "Failed to extract text from all available tokens. " + lastError }), { status: 500, headers });
+        }
+      }
+
+
       // --- Admin Migration Endpoint ---
       if (url.pathname === '/admin/migrate') {
         const password = request.headers.get("X-Admin-Password");
@@ -284,6 +365,8 @@ async function handleRequest(request) {
 
       const bookData = {
         type: body.type || 'buy',
+        editors: body.editors || '',
+        version: body.version || '',
         isNegotiable: !!body.isNegotiable,
         title: body.title,
         author: body.author || 'Not provided',
@@ -436,6 +519,8 @@ async function handleRequest(request) {
 
       const bookData = {
         type: body.type || existing.type || 'buy',
+        editors: body.editors !== undefined ? body.editors : (existing.editors || ''),
+        version: body.version !== undefined ? body.version : (existing.version || ''),
         isNegotiable: body.isNegotiable !== undefined ? !!body.isNegotiable : !!existing.isNegotiable,
         title: body.title,
         author: body.author || existing.author || 'Not provided',

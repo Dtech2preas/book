@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller Management</title>
     <script src="config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
     <style>
         :root {
             /* DTech Blue & Black Theme */
@@ -240,17 +240,18 @@
                     <img id="new-image-preview" style="max-width: 100%; max-height: 200px; display: none; margin-bottom: 10px; border-radius: 5px;">
 
                     <div id="ocr-section-new" style="display: none; background-color: #1a1a1a; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
-                        <p style="margin:0 0 5px 0;"><strong>Extracted Text</strong></p>
-                        <textarea id="ocr-result-new" style="width: 100%; height: 80px; background: #000; color: #fff; padding: 5px; box-sizing: border-box; border: 1px solid #444;" readonly>Scanning image...</textarea>
-                        <div style="display: flex; gap: 10px; margin-top: 5px;">
-                            <button type="button" onclick="mapOcrNew('new-title')" style="padding: 5px; font-size: 0.8rem; width: auto;">Set Title</button>
-                            <button type="button" onclick="mapOcrNew('new-author')" style="padding: 5px; font-size: 0.8rem; width: auto;">Set Author</button>
-                            <button type="button" onclick="copyOcrNew()" style="padding: 5px; font-size: 0.8rem; width: auto;">Copy Text</button>
-                        </div>
+                        <p style="margin:0; color: var(--primary-color);"><strong>Scanning image with AI...</strong></p>
+                    </div>
+
+                    <div id="validation-message-new" style="display: none; background-color: rgba(255, 165, 0, 0.2); border: 1px solid orange; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: left;">
+                        <strong style="color: orange;">Action Required:</strong> Please manually validate the extracted text below. Ensure you are listing the correct book and that all details are accurate before submitting. You can edit any of the fields below.
+                        <div id="additional-info-new" style="margin-top: 10px; font-size: 0.9em; color: #ccc;"></div>
                     </div>
 
                     <input type="text" id="new-title" placeholder="Book Title" required style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
                     <input type="text" id="new-author" placeholder="Author" required style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
+                    <input type="text" id="new-editors" placeholder="Editor(s) (Optional)" style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
+                    <input type="text" id="new-version" placeholder="Edition/Version (Optional)" style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
                     <input type="number" id="new-price" placeholder="Price (R)" required style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
                     <button type="submit" id="submit-new-btn">Submit Book</button>
                 </form>
@@ -322,46 +323,54 @@
             preview.style.display = 'block';
 
             const ocrSection = document.getElementById('ocr-section-new');
-            const ocrResult = document.getElementById('ocr-result-new');
+            const validationMsg = document.getElementById('validation-message-new');
+            const additionalInfoDiv = document.getElementById('additional-info-new');
+
             ocrSection.style.display = 'block';
-            ocrResult.value = "Scanning image...";
+            validationMsg.style.display = 'none';
+            ocrSection.innerHTML = '<p style="margin:0; color: var(--primary-color);"><strong>Scanning image with AI (this may take a few seconds)...</strong></p>';
+
+            if (!WORKER_URL) {
+                ocrSection.innerHTML = '<p style="color: red;">System not ready. Please refresh or type details manually.</p>';
+                return;
+            }
 
             try {
-                const result = await Tesseract.recognize(base64NewImage, 'eng');
-                ocrResult.value = result.data.text;
-                ocrResult.removeAttribute('readonly');
+                const res = await fetch(WORKER_URL + 'extract-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64NewImage })
+                });
+
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    ocrSection.style.display = 'none';
+
+                    // Prefill fields
+                    if (data.data.title) document.getElementById('new-title').value = data.data.title;
+                    if (data.data.author) document.getElementById('new-author').value = data.data.author;
+                    if (data.data.editors) document.getElementById('new-editors').value = data.data.editors;
+                    if (data.data.version) document.getElementById('new-version').value = data.data.version;
+
+                    // Show additional info if present
+                    if (data.data.additional_info) {
+                        additionalInfoDiv.textContent = `Additional Info Extracted: ${data.data.additional_info}`;
+                    } else {
+                        additionalInfoDiv.textContent = '';
+                    }
+
+                    validationMsg.style.display = 'block';
+                } else {
+                    ocrSection.innerHTML = `<p style="color: orange;">Failed to extract text automatically: ${data.error || 'Unknown error'}. You can type the details manually.</p>`;
+                }
             } catch (err) {
                 console.error(err);
-                ocrResult.value = "Failed to extract text.";
+                ocrSection.innerHTML = '<p style="color: orange;">Failed to extract text automatically. You can type the details manually.</p>';
             }
         };
         reader.readAsDataURL(file);
     });
-
-    window.mapOcrNew = function(field) {
-        const ocrText = document.getElementById('ocr-result-new');
-        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
-        if (selectedText) {
-            document.getElementById(field).value = selectedText;
-        } else {
-            alert('Please highlight some text first.');
-        }
-    };
-
-    window.copyOcrNew = function() {
-        const ocrText = document.getElementById('ocr-result-new');
-        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
-        const textToCopy = selectedText || ocrText.value;
-        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                showToast('Text copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
-        } else {
-            showToast('No valid text to copy.');
-        }
-    };
 
     document.getElementById('add-book-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -375,6 +384,8 @@
             contact: sellerContact,
             title: document.getElementById('new-title').value,
             author: document.getElementById('new-author').value,
+            editors: document.getElementById('new-editors').value,
+            version: document.getElementById('new-version').value,
             price: document.getElementById('new-price').value,
             image: base64NewImage
         };
