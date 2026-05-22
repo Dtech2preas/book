@@ -208,7 +208,7 @@ async function handleRequest(request) {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
+                        model: "llama-3.2-90b-vision-preview",
                         messages: [
                             {
                                 role: "user",
