@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sell Books - DTECH</title>
     <script src="config.js"></script>
-    <!-- Tesseract.js for OCR -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+
     <style>
         :root {
             --primary-color: #00D2FF;
@@ -16,316 +16,185 @@
             --card-bg: #1E1E1E;
             --border-color: #333333;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
+            background: var(--bg-color);
             color: var(--secondary-color);
-        }
-        header {
-            background-color: #000000;
-            color: var(--primary-color);
-            padding: 1rem 2rem;
-            border-bottom: 2px solid var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        header a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-        input[type="text"], input[type="number"], input[type="file"], select {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background-color: var(--bg-color);
-            color: white;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: var(--primary-color);
-            color: #000;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.1rem;
-            width: 100%;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background-color: var(--primary-hover);
         }
 
-        /* OCR Section */
-        .ocr-container {
-            display: none;
-            margin-top: 1rem;
+        header {
+            background: #000;
             padding: 1rem;
-            background-color: #2a2a2a;
-            border-radius: 5px;
-            border: 1px solid var(--border-color);
-        }
-        .ocr-text {
-            width: 100%;
-            height: 100px;
-            background-color: var(--bg-color);
-            color: var(--secondary-color);
-            border: 1px solid var(--border-color);
-            padding: 0.5rem;
-            box-sizing: border-box;
-            margin-bottom: 0.5rem;
-            overflow-y: auto;
-        }
-        .ocr-actions {
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            color: var(--primary-color);
         }
-        .ocr-actions button {
-            padding: 0.5rem;
-            font-size: 0.9rem;
-            width: auto;
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            margin-top: 2rem;
+            border-radius: 10px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        button {
+            background: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        #ocr-result {
+            width: 100%;
+            height: 120px;
         }
 
         #image-preview {
             max-width: 100%;
-            max-height: 300px;
-            display: none;
-            margin-top: 1rem;
-            border-radius: 5px;
+            margin-top: 10px;
         }
 
-        /* Modal */
-        .modal {
+        .ocr-container {
             display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-        }
-        .modal-content {
-            background-color: var(--card-bg);
-            margin: 15% auto;
-            padding: 2rem;
-            border: 1px solid var(--primary-color);
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
-            border-radius: 10px;
-        }
-        .code-display {
-            font-size: 3rem;
-            color: var(--primary-color);
-            letter-spacing: 5px;
-            margin: 1rem 0;
-            font-weight: bold;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #222;
         }
     </style>
 </head>
+
 <body>
 
 <header>
-    <div><a href="index.html">← Back to Home</a></div>
-    <h2>Sell Your Books</h2>
-    <div style="width: 100px;"></div>
+    <a href="index.html">← Back</a>
+    <h3>Sell Books</h3>
+    <div></div>
 </header>
 
 <div class="container">
-    <p>Upload your textbook to DTECH. Your submission will be reviewed by admins before it appears live.</p>
 
-    <form id="sell-form">
-        <div class="form-group">
-            <label for="sellerName">Your Full Name</label>
-            <input type="text" id="sellerName" required placeholder="e.g. Jane Doe">
-        </div>
-        <div class="form-group">
-            <label for="contact">WhatsApp Number</label>
-            <input type="text" id="contact" required placeholder="e.g. 0712345678">
-        </div>
+    <input type="text" id="sellerName" placeholder="Your Name">
+    <input type="text" id="contact" placeholder="WhatsApp Number">
 
-        <div class="form-group">
-            <label for="image">Book Image (Cover or Info Page)</label>
-            <input type="file" id="image" accept="image/*" required>
-            <img id="image-preview" alt="Preview">
+    <input type="file" id="image">
+    <img id="image-preview">
 
-            <div id="ocr-section" class="ocr-container">
-                <p><strong>Extracted Text (OCR)</strong></p>
-                <textarea id="ocr-result" class="ocr-text" readonly>Scanning image...</textarea>
-                <div class="ocr-actions">
-                    <button type="button" onclick="mapOcrText('title')">Set Title</button>
-                    <button type="button" onclick="mapOcrText('author')">Set Author</button>
-                    <button type="button" onclick="copyOcrText()">Copy Text</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="title">Book Title</label>
-            <input type="text" id="title" required placeholder="e.g. Introduction to Calculus">
-        </div>
-        <div class="form-group">
-            <label for="author">Author(s)</label>
-            <input type="text" id="author" required placeholder="e.g. James Stewart">
-        </div>
-        <div class="form-group">
-            <label for="price">Price (R)</label>
-            <input type="number" id="price" required placeholder="e.g. 450">
-        </div>
-
-        <button type="submit" id="submit-btn">Submit Book</button>
-    </form>
-</div>
-
-<!-- Success Modal -->
-<div id="successModal" class="modal">
-    <div class="modal-content">
-        <h2>Upload Successful!</h2>
-        <p>Your book is now <strong>Pending Approval</strong>.</p>
-        <p>Save this 4-digit code to manage your listings:</p>
-        <div class="code-display" id="sellerCodeDisplay">XXXX</div>
-        <p>Use this code on the <a href="seller-manage.html" style="color:var(--primary-color);">Seller Manage</a> page.</p>
-        <button onclick="window.location.href='index.html'" style="margin-top:1rem;">Back to Home</button>
+    <div class="ocr-container" id="ocr-section">
+        <p>Extracted Text</p>
+        <textarea id="ocr-result" readonly></textarea>
     </div>
+
+    <input type="text" id="title" placeholder="Book Title">
+    <input type="text" id="author" placeholder="Author">
+    <input type="number" id="price" placeholder="Price">
+
+    <button id="submit-btn">Submit</button>
 </div>
 
 <script>
-    let base64Image = null;
-    let workerUrl = '';
+let base64Image = null;
+let workerUrl = "";
 
-    window.appConfigPromise.then(config => {
-        workerUrl = config.workerUrl;
-        if (!workerUrl.endsWith('/')) workerUrl += '/';
-    }).catch(err => {
-        console.error("Config load error:", err);
-        alert("System still loading or failed to load. Please refresh.");
-    });
+// Load config
+window.appConfigPromise.then(config => {
+    workerUrl = config.workerUrl;
+});
 
-    // Image Upload & OCR
-    document.getElementById('image').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+// 🔥 IMAGE PREPROCESSING (IMPORTANT)
+function enhanceImage(imgSrc, callback) {
+    const img = new Image();
+    img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            base64Image = event.target.result;
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-            const preview = document.getElementById('image-preview');
-            preview.src = base64Image;
-            preview.style.display = 'block';
+        ctx.drawImage(img, 0, 0);
 
-            // Start OCR
-            const ocrSection = document.getElementById('ocr-section');
-            const ocrResult = document.getElementById('ocr-result');
-            ocrSection.style.display = 'block';
-            ocrResult.value = "Scanning image...";
+        let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let data = imgData.data;
 
-            try {
-                const result = await Tesseract.recognize(base64Image, 'eng', { logger: m => console.log(m) });
-                ocrResult.value = result.data.text;
-                ocrResult.removeAttribute('readonly'); // Allow user to manually copy
-            } catch (err) {
-                console.error(err);
-                ocrResult.value = "Failed to extract text.";
-            }
-        };
-        reader.readAsDataURL(file);
-    });
+        for (let i = 0; i < data.length; i += 4) {
+            let avg = (data[i] + data[i+1] + data[i+2]) / 3;
+            avg = avg > 140 ? 255 : 0;
 
-    function mapOcrText(field) {
-        const ocrText = document.getElementById('ocr-result');
-        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
-        if (selectedText) {
-            document.getElementById(field).value = selectedText;
-        } else {
-            alert('Please highlight some text in the extracted text box first.');
+            data[i] = data[i+1] = data[i+2] = avg;
         }
-    }
 
-    function copyOcrText() {
-        const ocrText = document.getElementById('ocr-result');
-        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
-        const textToCopy = selectedText || ocrText.value;
-        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert('Text copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
+        ctx.putImageData(imgData, 0, 0);
+        callback(canvas.toDataURL());
+    };
+
+    img.src = imgSrc;
+}
+
+// IMAGE UPLOAD + OCR
+document.getElementById("image").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        base64Image = event.target.result;
+
+        document.getElementById("image-preview").src = base64Image;
+
+        const ocrBox = document.getElementById("ocr-result");
+        document.getElementById("ocr-section").style.display = "block";
+        ocrBox.value = "Scanning...";
+
+        // 🔥 enhance first
+        enhanceImage(base64Image, async (cleanImg) => {
+
+            const result = await Tesseract.recognize(cleanImg, "eng", {
+                logger: m => console.log(m)
             });
-        } else {
-            alert('No valid text to copy.');
-        }
-    }
 
-    // Submit Form
-    document.getElementById('sell-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
+            ocrBox.value = result.data.text;
+        });
+    };
 
-        if (!workerUrl) {
-            alert("System configuration not ready, please wait a moment and try again.");
-            return;
-        }
+    reader.readAsDataURL(file);
+});
 
-        const btn = document.getElementById('submit-btn');
-        btn.textContent = 'Submitting...';
-        btn.disabled = true;
+// SUBMIT
+document.getElementById("submit-btn").addEventListener("click", async () => {
 
-        const payload = {
-            type: 'buy',
-            seller: document.getElementById('sellerName').value,
-            contact: document.getElementById('contact').value,
-            title: document.getElementById('title').value,
-            author: document.getElementById('author').value,
-            price: document.getElementById('price').value,
-            image: base64Image
-        };
+    const payload = {
+        seller: document.getElementById("sellerName").value,
+        contact: document.getElementById("contact").value,
+        title: document.getElementById("title").value,
+        author: document.getElementById("author").value,
+        price: document.getElementById("price").value,
+        image: base64Image
+    };
 
-        try {
-            const res = await fetch(workerUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                document.getElementById('sellerCodeDisplay').textContent = data.code;
-                document.getElementById('successModal').style.display = 'block';
-            } else {
-                alert('Error: ' + data.error);
-                btn.textContent = 'Submit Book';
-                btn.disabled = false;
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Network error.');
-            btn.textContent = 'Submit Book';
-            btn.disabled = false;
-        }
+    const res = await fetch(workerUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
     });
+
+    const data = await res.json();
+    alert(data.success ? "Uploaded!" : data.error);
+});
 </script>
+
 </body>
 </html>
