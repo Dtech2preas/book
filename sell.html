@@ -6,7 +6,7 @@
     <title>Sell Books - DTECH</title>
     <script src="config.js"></script>
     <!-- Tesseract.js for OCR -->
-
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         :root {
             --primary-color: #00D2FF;
@@ -173,12 +173,13 @@
             <img id="image-preview" alt="Preview">
 
             <div id="ocr-section" class="ocr-container">
-                <p style="color: var(--primary-color);"><strong>Scanning image...</strong></p>
-            </div>
-
-            <div id="validation-message" style="display: none; background-color: rgba(255, 165, 0, 0.2); border: 1px solid orange; padding: 10px; margin-top: 15px; border-radius: 5px;">
-                <strong style="color: orange;">Action Required:</strong> Please manually validate the extracted text below. Ensure you are listing the correct book and that all details are accurate before submitting. You can edit any of the fields below.
-                <div id="additional-info" style="margin-top: 10px; font-size: 0.9em; color: #ccc;"></div>
+                <p><strong>Extracted Text (OCR)</strong></p>
+                <textarea id="ocr-result" class="ocr-text" readonly>Scanning image...</textarea>
+                <div class="ocr-actions">
+                    <button type="button" onclick="mapOcrText('title')">Set Title</button>
+                    <button type="button" onclick="mapOcrText('author')">Set Author</button>
+                    <button type="button" onclick="copyOcrText()">Copy Text</button>
+                </div>
             </div>
         </div>
 
@@ -189,14 +190,6 @@
         <div class="form-group">
             <label for="author">Author(s)</label>
             <input type="text" id="author" required placeholder="e.g. James Stewart">
-        </div>
-        <div class="form-group">
-            <label for="editors">Editor(s) (Optional)</label>
-            <input type="text" id="editors" placeholder="e.g. John Doe">
-        </div>
-        <div class="form-group">
-            <label for="version">Edition/Version (Optional)</label>
-            <input type="text" id="version" placeholder="e.g. 5th Edition">
         </div>
         <div class="form-group">
             <label for="price">Price (R)</label>
@@ -231,7 +224,7 @@
         alert("System still loading or failed to load. Please refresh.");
     });
 
-    // Image Upload & AI Text Extraction
+    // Image Upload & OCR
     document.getElementById('image').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -244,57 +237,50 @@
             preview.src = base64Image;
             preview.style.display = 'block';
 
+            // Start OCR
             const ocrSection = document.getElementById('ocr-section');
-            const validationMsg = document.getElementById('validation-message');
-            const additionalInfoDiv = document.getElementById('additional-info');
-
+            const ocrResult = document.getElementById('ocr-result');
             ocrSection.style.display = 'block';
-            validationMsg.style.display = 'none';
-            ocrSection.innerHTML = '<p style="color: var(--primary-color);"><strong>Scanning image with AI (this may take a few seconds)...</strong></p>';
-
-            if (!workerUrl) {
-                ocrSection.innerHTML = '<p style="color: red;">System not ready. Please refresh or type details manually.</p>';
-                return;
-            }
+            ocrResult.value = "Scanning image...";
 
             try {
-                const res = await fetch(workerUrl + 'extract-text', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: base64Image })
-                });
-                
-                const data = await res.json();
-                
-                if (data.success && data.data) {
-                    ocrSection.style.display = 'none';
-
-                    // Prefill fields
-                    if (data.data.title) document.getElementById('title').value = data.data.title;
-                    if (data.data.author) document.getElementById('author').value = data.data.author;
-                    if (data.data.editors) document.getElementById('editors').value = data.data.editors;
-                    if (data.data.version) document.getElementById('version').value = data.data.version;
-
-                    // Show additional info if present
-                    if (data.data.additional_info) {
-                        additionalInfoDiv.textContent = `Additional Info Extracted: ${data.data.additional_info}`;
-                    } else {
-                        additionalInfoDiv.textContent = '';
-                    }
-
-                    validationMsg.style.display = 'block';
-                } else {
-                    ocrSection.innerHTML = `<p style="color: orange;">Failed to extract text automatically: ${data.error || 'Unknown error'}. You can type the details manually.</p>`;
-                }
+                const result = await Tesseract.recognize(base64Image, 'eng', { logger: m => console.log(m) });
+                ocrResult.value = result.data.text;
+                ocrResult.removeAttribute('readonly'); // Allow user to manually copy
             } catch (err) {
                 console.error(err);
-                ocrSection.innerHTML = '<p style="color: orange;">Failed to extract text automatically. You can type the details manually.</p>';
+                ocrResult.value = "Failed to extract text.";
             }
         };
         reader.readAsDataURL(file);
     });
 
-    // Submit Form (unchanged)
+    function mapOcrText(field) {
+        const ocrText = document.getElementById('ocr-result');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        if (selectedText) {
+            document.getElementById(field).value = selectedText;
+        } else {
+            alert('Please highlight some text in the extracted text box first.');
+        }
+    }
+
+    function copyOcrText() {
+        const ocrText = document.getElementById('ocr-result');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        const textToCopy = selectedText || ocrText.value;
+        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Text copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        } else {
+            alert('No valid text to copy.');
+        }
+    }
+
+    // Submit Form
     document.getElementById('sell-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -313,8 +299,6 @@
             contact: document.getElementById('contact').value,
             title: document.getElementById('title').value,
             author: document.getElementById('author').value,
-            editors: document.getElementById('editors').value,
-            version: document.getElementById('version').value,
             price: document.getElementById('price').value,
             image: base64Image
         };
