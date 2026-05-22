@@ -173,7 +173,7 @@
             <img id="image-preview" alt="Preview">
 
             <div id="ocr-section" class="ocr-container">
-                <p><strong>Extracted Text (OCR)</strong></p>
+                <p><strong>Extracted Text (OCR) <span style="font-weight:normal;font-size:0.8rem;">(Tip: highlight then click buttons)</span></strong></p>
                 <textarea id="ocr-result" class="ocr-text" readonly>Scanning image...</textarea>
                 <div class="ocr-actions">
                     <button type="button" onclick="mapOcrText('title')">Set Title</button>
@@ -224,7 +224,50 @@
         alert("System still loading or failed to load. Please refresh.");
     });
 
-    // Image Upload & OCR
+    // Preprocessing function: grayscale + contrast + threshold to create a clean black & white image
+    function preprocessImage(imageSrc) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Resize large images for faster OCR (max 1200px width/height)
+                const maxDimension = 1200;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDimension || height > maxDimension) {
+                    const ratio = Math.min(maxDimension / width, maxDimension / height);
+                    width = Math.floor(width * ratio);
+                    height = Math.floor(height * ratio);
+                }
+                canvas.width = width;
+                canvas.height = height;
+                
+                ctx.drawImage(img, 0, 0, width, height);
+                const imageData = ctx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                
+                // Convert to grayscale, increase contrast using simple threshold
+                const threshold = 128; // tweak if needed (0-255)
+                for (let i = 0; i < data.length; i += 4) {
+                    // Gray value (luminance formula)
+                    const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+                    const val = gray > threshold ? 255 : 0;
+                    data[i] = val;     // red
+                    data[i+1] = val;   // green
+                    data[i+2] = val;   // blue
+                    // alpha unchanged
+                }
+                ctx.putImageData(imageData, 0, 0);
+                resolve(canvas.toDataURL());
+            };
+            img.onerror = reject;
+            img.src = imageSrc;
+        });
+    }
+
+    // Image Upload & OCR with preprocessing
     document.getElementById('image').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -237,19 +280,32 @@
             preview.src = base64Image;
             preview.style.display = 'block';
 
-            // Start OCR
+            // Show OCR container and start processing
             const ocrSection = document.getElementById('ocr-section');
             const ocrResult = document.getElementById('ocr-result');
             ocrSection.style.display = 'block';
-            ocrResult.value = "Scanning image...";
+            ocrResult.value = "Preprocessing image...";
 
             try {
-                const result = await Tesseract.recognize(base64Image, 'eng', { logger: m => console.log(m) });
-                ocrResult.value = result.data.text;
-                ocrResult.removeAttribute('readonly'); // Allow user to manually copy
+                // Step 1: Preprocess to improve OCR
+                const cleanImage = await preprocessImage(base64Image);
+                
+                ocrResult.value = "Scanning image (this may take a few seconds)...";
+                
+                // Step 2: Run Tesseract on the cleaned image
+                const result = await Tesseract.recognize(cleanImage, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            ocrResult.value = `Scanning... ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+                
+                ocrResult.value = result.data.text.trim() || "(No text found)";
+                ocrResult.removeAttribute('readonly'); // Allow user to manually edit/copy
             } catch (err) {
                 console.error(err);
-                ocrResult.value = "Failed to extract text.";
+                ocrResult.value = "Failed to extract text. You can still type the details manually.";
             }
         };
         reader.readAsDataURL(file);
@@ -269,7 +325,7 @@
         const ocrText = document.getElementById('ocr-result');
         const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
         const textToCopy = selectedText || ocrText.value;
-        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
+        if (textToCopy && !textToCopy.includes("Scanning") && textToCopy !== "Failed to extract text. You can still type the details manually.") {
             navigator.clipboard.writeText(textToCopy).then(() => {
                 alert('Text copied to clipboard!');
             }).catch(err => {
@@ -280,7 +336,7 @@
         }
     }
 
-    // Submit Form
+    // Submit Form (unchanged)
     document.getElementById('sell-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
