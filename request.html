@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sell Books - DTECH</title>
+    <title>Request a Book - DTECH</title>
     <script src="config.js"></script>
     <!-- Tesseract.js for OCR -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
@@ -189,7 +189,7 @@
 
 <header>
     <div><a href="index.html">← Back to Home</a></div>
-    <h2>Sell Your Books</h2>
+    <h2>Request a Book</h2>
     <div class="header-actions">
         <button class="manual-btn" onclick="openManualModal()">User Manual</button>
     </div>
@@ -207,8 +207,8 @@
         </div>
 
         <div class="form-group">
-            <label for="image">Book Image (Cover or Info Page)</label>
-            <input type="file" id="image" accept="image/*" required>
+            <label for="image">Book Image (Optional)</label>
+            <input type="file" id="image" accept="image/*">
             <img id="image-preview" alt="Preview">
 
             <div id="ocr-section" class="ocr-container">
@@ -231,11 +231,19 @@
             <input type="text" id="author" required placeholder="e.g. James Stewart">
         </div>
         <div class="form-group">
-            <label for="price">Price (R)</label>
-            <input type="number" id="price" required placeholder="e.g. 450">
+            <label>Price Range (R)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="minPrice" required placeholder="Min (e.g. 200)">
+                <input type="number" id="maxPrice" required placeholder="Max (e.g. 450)">
+            </div>
         </div>
 
-        <button type="submit" id="submit-btn">Submit Book</button>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="negotiable" checked style="width: auto;">
+            <label for="negotiable" style="margin: 0; font-weight: normal;">Negotiable</label>
+        </div>
+
+        <button type="submit" id="submit-btn">Submit Request</button>
     </form>
 </div>
 
@@ -379,13 +387,19 @@
         btn.textContent = 'Submitting...';
         btn.disabled = true;
 
+        const minP = document.getElementById('minPrice').value;
+        const maxP = document.getElementById('maxPrice').value;
+        const priceStr = `R${minP} - R${maxP}`;
+        const isNeg = document.getElementById('negotiable').checked;
+
         const payload = {
-            type: 'buy',
+            type: 'looking_for',
             seller: document.getElementById('sellerName').value,
             contact: document.getElementById('contact').value,
             title: document.getElementById('title').value,
             author: document.getElementById('author').value,
-            price: document.getElementById('price').value,
+            price: priceStr,
+            isNegotiable: isNeg,
             image: base64Image
         };
 
@@ -402,13 +416,13 @@
                 document.getElementById('successModal').style.display = 'block';
             } else {
                 alert('Error: ' + data.error);
-                btn.textContent = 'Submit Book';
+                btn.textContent = 'Submit Request';
                 btn.disabled = false;
             }
         } catch (err) {
             console.error(err);
             alert('Network error.');
-            btn.textContent = 'Submit Book';
+            btn.textContent = 'Submit Request';
             btn.disabled = false;
         }
     });

@@ -30,14 +30,59 @@
             background-color: #000;
             color: var(--primary-color);
             padding: 1rem 2rem;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             border-bottom: 2px solid var(--primary-color);
         }
         .header-logo-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 0.5rem;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .manual-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .manual-btn:hover {
+            background-color: var(--primary-color);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 2rem;
+            border: 1px solid var(--primary-color);
+            width: 90%;
+            max-width: 600px;
+            border-radius: 10px;
         }
         .header-logo {
             height: 50px;
@@ -206,11 +251,34 @@
 <div id="toast-container" class="toast-container"></div>
 
 <header>
+    <div style="width: 100px;"><a href="index.html" style="color:var(--primary-color); text-decoration:none;">← Back</a></div>
     <div class="header-logo-container">
         <img src="logo.png" alt="Logo" class="header-logo brand-logo">
         <h1><span class="brand-name">Platform</span> Seller Management</h1>
     </div>
+    <div class="header-actions">
+        <button class="manual-btn" onclick="openManualModal()">User Manual</button>
+    </div>
 </header>
+
+<!-- User Manual Modal -->
+<div id="manualModal" class="modal">
+    <div class="modal-content" style="text-align: left;">
+        <span style="float: right; cursor: pointer; font-size: 1.5rem; margin-top: -10px;" onclick="closeManualModal()">&times;</span>
+        <h2 style="color: var(--primary-color); text-align: center;">User Manual</h2>
+
+        <h4>1. Your 4-Digit Code</h4>
+        <p>After successfully adding a book to sell or request, you will receive a 4-digit code. <strong>Keep this code safe!</strong> It acts as your password to manage your listings.</p>
+
+        <h4>2. Managing Your Books</h4>
+        <p>You are currently in the Seller Management section. Here you can see the books you are selling and the ones you requested (Looking For). You can delete items that have been sold or fulfilled.</p>
+
+        <h4>3. Approval Process</h4>
+        <p>All submitted listings initially go to a Pending state. An admin will review and approve your listing, usually in less than a few minutes. You can track this status on this page.</p>
+
+        <button onclick="closeManualModal()" style="margin-top:1.5rem; width: 100%;">Close Manual</button>
+    </div>
+</div>
 
 <div class="container">
     <div id="login-section" class="card">
@@ -221,7 +289,6 @@
             <button type="submit" id="login-btn">Access My Books</button>
         </form>
         <div id="login-message" class="message"></div>
-        <a href="index.html" class="back-link">← Back to Home</a>
     </div>
 
     <div id="manage-section" style="display: none;">
@@ -258,7 +325,7 @@
             </div>
         </div>
 
-        <h2 style="text-align: center;">Your Listed Books</h2>
+        <h2 style="text-align: center;">Your Listings</h2>
         <div id="book-list" class="book-list">
             <!-- Books injected here -->
         </div>
@@ -270,6 +337,13 @@
 </footer>
 
 <script>
+    function openManualModal() {
+        document.getElementById('manualModal').style.display = 'block';
+    }
+    function closeManualModal() {
+        document.getElementById('manualModal').style.display = 'none';
+    }
+
     let WORKER_URL = '';
     const loginForm = document.getElementById('login-form');
     const codeInput = document.getElementById('seller-code');
@@ -489,14 +563,26 @@
             const item = document.createElement('div');
             item.className = 'book-item';
 
+            const isLookingFor = book.type === 'looking_for';
+            const typeBadge = isLookingFor
+                ? '<span style="font-size:0.7em;color:#000;background:var(--primary-color);padding:2px 5px;border-radius:3px;margin-right:5px;">LOOKING FOR</span>'
+                : '<span style="font-size:0.7em;color:#fff;background:#25D366;padding:2px 5px;border-radius:3px;margin-right:5px;">SELLING</span>';
+            const statusBadge = book.status === 'pending'
+                ? '<span style="font-size:0.7em;color:orange;background:#333;padding:2px 5px;border-radius:3px;">PENDING</span>'
+                : '<span style="font-size:0.7em;color:#25D366;background:#333;padding:2px 5px;border-radius:3px;">ACTIVE</span>';
+
             // Image fallback logic
-            const imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+            let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+            const fallbackSrc = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
 
             item.innerHTML = `
-                <img src="${imgSrc}" alt="${book.title}" loading="lazy">
+                <img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.src='${fallbackSrc}'">
                 <div class="book-info">
-                    <div class="book-title">${book.title} ${book.status === 'pending' ? '<span style="font-size:0.7em;color:orange;background:#333;padding:2px 5px;border-radius:3px;">PENDING</span>' : ''}</div>
-                    <div class="book-price">${book.price}</div>
+                    <div class="book-title">${typeBadge} ${book.title}</div>
+                    <div style="margin-top: 5px;">${statusBadge}</div>
+                    <div class="book-price" style="margin-top: 5px;">${book.price}</div>
                 </div>
                 <button class="delete-btn" onclick="deleteBook('${book.id}')">Delete</button>
             `;

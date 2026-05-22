@@ -314,15 +314,27 @@
         }
 
         data.forEach(item => {
+            const isLookingFor = item.type === 'looking_for';
+            const typeBadge = isLookingFor
+                ? '<span style="font-size:0.7em;color:#000;background:var(--primary-color);padding:2px 5px;border-radius:3px;margin-bottom:5px;display:inline-block;">LOOKING FOR</span>'
+                : '<span style="font-size:0.7em;color:#fff;background:#28a745;padding:2px 5px;border-radius:3px;margin-bottom:5px;display:inline-block;">SELLING</span>';
+
+            const fallbackSrc = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
+
+            let imgSrc = item.image ? item.image : `${workerUrl}image?id=${item.id}`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><img src="${workerUrl}image?id=${item.id}" style="width:50px; height:70px; object-fit:cover; border-radius:4px;"></td>
+                <td><img src="${imgSrc}" onerror="this.src='${fallbackSrc}'" style="width:50px; height:70px; object-fit:cover; border-radius:4px;"></td>
                 <td>
+                    ${typeBadge}<br>
                     <strong>${item.title}</strong><br>
                     <small>${item.author || ''}</small>
                 </td>
                 <td>${item.seller}<br><small>${item.contact}</small></td>
-                <td>R${item.price}</td>
+                <td>${isLookingFor ? item.price : 'R' + item.price}</td>
                 <td>
                     ${isPending ? `<button class="action-btn btn-approve" onclick="approveBook('${item.id}')">Approve</button>` : ''}
                     <button class="action-btn btn-reject" onclick="deleteBook('${item.id}')">${isPending ? 'Reject' : 'Delete'}</button>

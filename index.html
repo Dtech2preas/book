@@ -714,7 +714,6 @@
 
         <div class="header-nav">
             <a href="sell.html" style="color:var(--primary-color);">Sell Your Books</a>
-            <a href="services.html">Services</a>
             <a href="about.html">About Us</a>
         </div>
     </div>
@@ -736,9 +735,10 @@
     </div>
 
     <div id="request-book-container" style="display: none; text-align: center; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 10px;">Looking For Books <span class="info-icon" style="background-color: var(--primary-color); color: #000; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 10px; vertical-align: middle;" onclick="openLookingForInfoModal()">i</span></h3>
         <p style="color: #ccc; margin-bottom: 10px;">Can't find the book you need? Let others know you're looking for it!</p>
-        <a href="#" id="request-book-btn" class="contact-btn" target="_blank" style="padding: 10px 20px; font-size: 1rem;">
-            Request a Book via WhatsApp
+        <a href="request.html" class="contact-btn" style="padding: 10px 20px; font-size: 1rem; background-color: var(--primary-color); color: #000;">
+            Add book to listing
         </a>
     </div>
 
@@ -781,6 +781,24 @@
 <!-- Components -->
 <div id="toast-container" class="toast-container"></div>
 <button id="back-to-top" title="Back to Top">↑</button>
+
+<!-- Looking For Info Modal -->
+<div id="lookingForInfoModal" class="modal">
+    <div class="stats-modal-content" style="max-width: 500px; text-align: left;">
+        <span class="close" onclick="closeLookingForInfoModal()">&times;</span>
+        <h3 style="color: var(--primary-color);">About "Looking For Books"</h3>
+        <p style="font-size: 0.95rem; margin-bottom: 1rem;">
+            This section is for when the book you're looking for doesn't exist in the "Buy Books" section.
+            <br><br>
+            You can put the book details here, and whoever has that book will come contact you.
+            <br><br>
+            <strong>For those who have books:</strong> Please go through the listings to see if anyone is looking for any old books you might have!
+        </p>
+        <div style="text-align: center;">
+            <a href="request.html" class="contact-btn" style="padding: 10px 20px; font-size: 1rem; background-color: var(--primary-color); color: #000;">Add book to listing</a>
+        </div>
+    </div>
+</div>
 
 <!-- Stats Modal -->
 <div id="statsModal" class="modal">
@@ -1040,11 +1058,18 @@
         }
     }
 
+    // Looking For Info Modal Logic
+    function openLookingForInfoModal() {
+        document.getElementById('lookingForInfoModal').style.display = 'block';
+    }
+    function closeLookingForInfoModal() {
+        document.getElementById('lookingForInfoModal').style.display = 'none';
+    }
+
     // Tab Logic
     const tabBuy = document.getElementById('tab-buy');
     const tabLookingFor = document.getElementById('tab-looking-for');
     const requestBookContainer = document.getElementById('request-book-container');
-    const requestBookBtn = document.getElementById('request-book-btn');
 
     tabBuy.addEventListener('click', () => {
         currentTab = 'buy';
@@ -1061,12 +1086,18 @@
         requestBookContainer.style.display = 'block';
         applyFilterAndSort();
 
-        // Setup request book whatsapp link (wait for config promise to ensure it's loaded)
-        window.appConfigPromise.then(config => {
-            const phoneNumber = config.adminWhatsAppNumber;
-            const reqMessage = `Hello ${config.siteName}, I am looking for a book to buy. Name: [Your Name], Book Title: [Book Title], Price Range: [Price Range], Contact Number: [Your Number].`;
-            requestBookBtn.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(reqMessage)}`;
-        });
+        // Show popup on first visit
+        if (!localStorage.getItem('hasSeenLookingForInfo')) {
+            openLookingForInfoModal();
+            localStorage.setItem('hasSeenLookingForInfo', 'true');
+        }
+    });
+
+    window.addEventListener('click', function(event) {
+        const lookingForInfoModal = document.getElementById('lookingForInfoModal');
+        if (event.target == lookingForInfoModal) {
+            closeLookingForInfoModal();
+        }
     });
 
     function openModal(bookId) {
