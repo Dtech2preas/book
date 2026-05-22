@@ -229,14 +229,17 @@
     let workerUrl = '';
 
     // Wait for config.js to load
-    window.addEventListener('load', () => {
-        if (window.appConfig && window.appConfig.workerUrl) {
-            workerUrl = window.appConfig.workerUrl;
+    window.appConfigPromise.then(config => {
+        if (config && config.workerUrl) {
+            workerUrl = config.workerUrl;
             if (!workerUrl.endsWith('/')) workerUrl += '/';
             console.log("Worker loaded:", workerUrl);
         } else {
             alert("Config not loaded properly");
         }
+    }).catch(err => {
+        console.error("Config load error:", err);
+        alert("Config failed to load");
     });
 
     function login() {
