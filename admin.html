@@ -115,14 +115,14 @@
             color: var(--primary-color);
             margin: 10px 0;
         }
-
+        
         .analytics-controls {
             display: flex;
             gap: 10px;
             margin-bottom: 1rem;
             flex-wrap: wrap;
         }
-
+        
         .analytics-controls select, .analytics-controls input {
             padding: 8px;
             border-radius: 5px;
@@ -204,9 +204,9 @@
                     <div id="stat-visitors" class="stat-value">0</div>
                 </div>
             </div>
-
+            
             <hr style="border-color: var(--border-color); margin: 2rem 0;">
-
+            
             <h3>Analytics Dashboard</h3>
             <div class="analytics-controls">
                 <select id="graph-metric" onchange="updateGraph()">
@@ -229,7 +229,7 @@
                     <input type="date" id="date-end" onchange="updateGraph()">
                 </div>
             </div>
-
+            
             <div style="background: var(--card-bg); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); height: 400px; margin-bottom: 2rem;">
                 <canvas id="statsChart"></canvas>
             </div>
@@ -388,10 +388,10 @@
     function getDatesForTimeline(timeline) {
         const now = new Date();
         now.setHours(0, 0, 0, 0); // start of today
-
+        
         let startDate = new Date(now);
         let endDate = new Date(now);
-
+        
         if (timeline === 'today') {
             // Already set
         } else if (timeline === 'this_week') {
@@ -414,7 +414,7 @@
             if (startVal) startDate = new Date(startVal);
             if (endVal) endDate = new Date(endVal);
         }
-
+        
         return { startDate, endDate };
     }
 
@@ -422,17 +422,17 @@
         let dates = [];
         let current = new Date(start);
         const limit = new Date(end);
-
+        
         // Prevent infinite loops if end < start
         if (limit < current) return dates;
-
+        
         // Ensure we don't generate too many points (e.g., all time)
         const daysDiff = Math.floor((limit - current) / (1000 * 60 * 60 * 24));
-
+        
         if (daysDiff > 365 * 5) {
             return dates; // Fallback or handle differently
         }
-
+        
         while (current <= limit) {
             dates.push(current.toISOString().split('T')[0]);
             current.setDate(current.getDate() + 1);
@@ -444,7 +444,7 @@
         const metric = document.getElementById('graph-metric').value;
         const timeline = document.getElementById('graph-timeline').value;
         const customInputs = document.getElementById('custom-date-inputs');
-
+        
         if (timeline === 'custom') {
             customInputs.style.display = 'flex';
         } else {
@@ -452,10 +452,10 @@
         }
 
         const { startDate, endDate } = getDatesForTimeline(timeline);
-
+        
         let labels = [];
         let dataPoints = [];
-
+        
         if (timeline === 'all_time') {
             // Group by month/year or just show dates that have data
             const availableDates = Object.keys(globalDailyStats).sort();
@@ -472,10 +472,10 @@
         // Grouping data if the range is large (e.g. this_year, all_time)
         // For simplicity, let's keep daily points for now, or aggregate if needed.
         // Chart.js handles large datasets well if we just pass the daily points.
-
+        
         let aggregateLabels = [];
         let aggregateDataPoints = [];
-
+        
         if (labels.length > 90) { // If more than 3 months, group by month
             const monthData = {};
             labels.forEach(dateStr => {
@@ -493,7 +493,7 @@
         }
 
         const ctx = document.getElementById('statsChart').getContext('2d');
-
+        
         if (chartInstance) {
             chartInstance.destroy();
         }
