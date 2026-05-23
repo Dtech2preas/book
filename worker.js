@@ -152,12 +152,50 @@ async function handleRequest(request) {
         const stats = await BOOKS_KV.get("system:stats", { type: "json" });
         const soldCount = stats ? (stats.sold || 0) : 0;
 
+        // Fetch external visitors
+        let visitorsCount = 0;
+        const currentUrl = url.hostname; // Default to hostname if not passed
+        const targetUrl = url.searchParams.get("url") || currentUrl;
+        try {
+            const extRes = await fetch(`https://late-salad-779e.lefa4082.workers.dev/?url=${encodeURIComponent(targetUrl)}`);
+            if (extRes.ok) {
+                const extData = await extRes.json();
+                visitorsCount = parseInt(extData.site_views) || 0;
+            }
+        } catch(e) {
+            console.error("External counter fetch failed", e);
+        }
+
+        // Handle daily aggregates
+        let dailyStats = await BOOKS_KV.get("system:daily_stats", { type: "json" });
+        if (!dailyStats) dailyStats = {};
+
+        const today = new Date().toISOString().split('T')[0];
+        if (!dailyStats[today]) {
+            dailyStats[today] = { visitors: 0, sold: 0, sellers: 0 };
+        }
+
+        // Calculate visitor difference and update daily visitors
+        const lastTotalVisitors = (stats && stats.lastTotalVisitors) ? stats.lastTotalVisitors : 0;
+        if (visitorsCount > lastTotalVisitors) {
+             const diff = visitorsCount - lastTotalVisitors;
+             dailyStats[today].visitors += diff;
+
+             // Save the new total back to system:stats
+             let newStats = stats || {};
+             newStats.lastTotalVisitors = visitorsCount;
+             await BOOKS_KV.put("system:stats", JSON.stringify(newStats));
+             await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
+        }
+
         return new Response(JSON.stringify({
             booksListed: booksCount,
             pendingCount: pendingCount,
             activeCount: activeCount,
             sellersCount: sellersCount,
-            sold: soldCount
+            sold: soldCount,
+            visitors: visitorsCount,
+            dailyStats: dailyStats
         }), { headers });
       }
 
@@ -379,6 +417,7 @@ async function handleRequest(request) {
       if (!sellersMap) sellersMap = {};
 
       let code;
+      let isNewSeller = false;
       if (sellersMap[contact]) {
           code = sellersMap[contact].code;
           sellersMap[contact].count++;
@@ -386,6 +425,7 @@ async function handleRequest(request) {
           sellersMap[contact].name = body.seller;
       } else {
           code = generateSellerCode();
+          isNewSeller = true;
           sellersMap[contact] = {
               code: code,
               name: body.seller,
@@ -396,6 +436,16 @@ async function handleRequest(request) {
 
       // Save Map
       await BOOKS_KV.put("system:sellers", JSON.stringify(sellersMap));
+
+      // Update daily aggregates for new seller
+      if (isNewSeller) {
+          let dailyStats = await BOOKS_KV.get("system:daily_stats", { type: "json" });
+          if (!dailyStats) dailyStats = {};
+          const today = new Date().toISOString().split('T')[0];
+          if (!dailyStats[today]) dailyStats[today] = { visitors: 0, sold: 0, sellers: 0 };
+          dailyStats[today].sellers += 1;
+          await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
+      }
 
       // Generate ID
       const id = `book:${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -520,6 +570,14 @@ async function handleRequest(request) {
       const stats = await BOOKS_KV.get("system:stats", { type: "json" }) || { sold: 0 };
       stats.sold = (stats.sold || 0) + 1;
       await BOOKS_KV.put("system:stats", JSON.stringify(stats));
+
+      // Update daily aggregates
+      let dailyStats = await BOOKS_KV.get("system:daily_stats", { type: "json" });
+      if (!dailyStats) dailyStats = {};
+      const today = new Date().toISOString().split('T')[0];
+      if (!dailyStats[today]) dailyStats[today] = { visitors: 0, sold: 0, sellers: 0 };
+      dailyStats[today].sold += 1;
+      await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
 
       return new Response(JSON.stringify({ success: true, message: "Book deleted" }), { headers });
     } catch (err) {

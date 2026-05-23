@@ -1140,6 +1140,7 @@
         const book = allBooks.find(b => b.id === bookId);
         if(!book) return;
 
+        currentReportBookId = bookId;
         modal.style.display = "block";
 
         const isLookingFor = book.type === 'looking_for';
@@ -1208,12 +1209,9 @@
     let currentReportBookId = null;
 
     window.openReportModal = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        currentReportBookId = urlParams.get('book'); // Assume 'book' param is set when modal is open
-        if(!currentReportBookId) {
-             // Fallback if URL param wasn't set, try finding it from the active modal's state if we stored it.
-             // Actually, the easiest way is to pass bookId directly from the "Report Listing" button click.
-             // But since we rely on openModal setting the URL param...
+        if (!currentReportBookId) {
+             showToast('Error: Could not determine which book to report.');
+             return;
         }
         document.getElementById('reportModal').style.display = 'flex';
     };
@@ -1227,8 +1225,7 @@
         e.preventDefault();
 
         // Find current book ID
-        const urlParams = new URLSearchParams(window.location.search);
-        let bookIdToReport = urlParams.get('book');
+        let bookIdToReport = currentReportBookId;
 
         if (!bookIdToReport) {
             showToast('Error: Could not determine which book to report.');
