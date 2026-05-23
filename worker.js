@@ -171,21 +171,55 @@ async function handleRequest(request) {
         if (!dailyStats) dailyStats = {};
 
         const today = new Date().toISOString().split('T')[0];
+        const launchDate = "2026-02-20";
+
         if (!dailyStats[today]) {
             dailyStats[today] = { visitors: 0, sold: 0, sellers: 0 };
+        }
+        if (!dailyStats[launchDate]) {
+            dailyStats[launchDate] = { visitors: 0, sold: 0, sellers: 0 };
+        }
+
+        // Sum current daily stats
+        let sumSold = 0;
+        let sumSellers = 0;
+        for (const date in dailyStats) {
+            sumSold += (dailyStats[date].sold || 0);
+            sumSellers += (dailyStats[date].sellers || 0);
+        }
+
+        let statsUpdated = false;
+
+        // Backfill sold and sellers
+        if (soldCount > sumSold) {
+            dailyStats[launchDate].sold += (soldCount - sumSold);
+            statsUpdated = true;
+        }
+        if (sellersCount > sumSellers) {
+            dailyStats[launchDate].sellers += (sellersCount - sumSellers);
+            statsUpdated = true;
         }
 
         // Calculate visitor difference and update daily visitors
         const lastTotalVisitors = (stats && stats.lastTotalVisitors) ? stats.lastTotalVisitors : 0;
         if (visitorsCount > lastTotalVisitors) {
-             const diff = visitorsCount - lastTotalVisitors;
-             dailyStats[today].visitors += diff;
+             if (lastTotalVisitors === 0) {
+                 // First time fetching, backfill all visitors to launch date
+                 dailyStats[launchDate].visitors += visitorsCount;
+             } else {
+                 const diff = visitorsCount - lastTotalVisitors;
+                 dailyStats[today].visitors += diff;
+             }
 
              // Save the new total back to system:stats
              let newStats = stats || {};
              newStats.lastTotalVisitors = visitorsCount;
              await BOOKS_KV.put("system:stats", JSON.stringify(newStats));
-             await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
+             statsUpdated = true;
+        }
+
+        if (statsUpdated) {
+            await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
         }
 
         return new Response(JSON.stringify({
