@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary-color: #00D2FF;
@@ -115,6 +116,21 @@
             margin: 10px 0;
         }
 
+        .analytics-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .analytics-controls select, .analytics-controls input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: #fff;
+        }
+
         /* Tables */
         table {
             width: 100%;
@@ -183,7 +199,41 @@
                     <div>Books Sold</div>
                     <div id="stat-sold" class="stat-value">0</div>
                 </div>
+                <div class="stat-card">
+                    <div>Total Visitors</div>
+                    <div id="stat-visitors" class="stat-value">0</div>
+                </div>
             </div>
+
+            <hr style="border-color: var(--border-color); margin: 2rem 0;">
+
+            <h3>Analytics Dashboard</h3>
+            <div class="analytics-controls">
+                <select id="graph-metric" onchange="updateGraph()">
+                    <option value="visitors">Visitors</option>
+                    <option value="sold">Books Sold</option>
+                    <option value="sellers">Registered Sellers</option>
+                </select>
+                <select id="graph-timeline" onchange="updateGraph()">
+                    <option value="this_week" selected>This Week</option>
+                    <option value="today">Today</option>
+                    <option value="last_week">Last Week</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="this_year">This Year</option>
+                    <option value="all_time">All Time</option>
+                    <option value="custom">Custom Date</option>
+                </select>
+                <div id="custom-date-inputs" style="display: none; gap: 5px;">
+                    <input type="date" id="date-start" onchange="updateGraph()">
+                    <span>to</span>
+                    <input type="date" id="date-end" onchange="updateGraph()">
+                </div>
+            </div>
+
+            <div style="background: var(--card-bg); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); height: 400px; margin-bottom: 2rem;">
+                <canvas id="statsChart"></canvas>
+            </div>
+
             <div style="text-align:center;">
                 <button onclick="fetchData()">Refresh Data</button>
             </div>
@@ -295,6 +345,9 @@
         document.getElementById(tabId).classList.add('active');
     }
 
+    let chartInstance = null;
+    let globalDailyStats = {};
+
     async function fetchData() {
         try {
             const statRes = await fetch(workerUrl + 'stats');
@@ -304,6 +357,10 @@
             document.getElementById('stat-pending').textContent = stats.pendingCount || 0;
             document.getElementById('stat-sellers').textContent = stats.sellersCount || 0;
             document.getElementById('stat-sold').textContent = stats.sold || 0;
+            document.getElementById('stat-visitors').textContent = stats.visitors || 0;
+
+            globalDailyStats = stats.dailyStats || {};
+            updateGraph();
 
             const bookRes = await fetch(workerUrl + 'admin/books', {
                 headers: { 'X-Admin-Password': adminPass }
@@ -326,6 +383,160 @@
         } catch (err) {
             console.error(err);
         }
+    }
+
+    function getDatesForTimeline(timeline) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // start of today
+
+        let startDate = new Date(now);
+        let endDate = new Date(now);
+
+        if (timeline === 'today') {
+            // Already set
+        } else if (timeline === 'this_week') {
+            const day = now.getDay() || 7; // Get current day number, converting Sun(0) to 7
+            if (day !== 1) startDate.setHours(-24 * (day - 1)); // start of week (Monday)
+        } else if (timeline === 'last_week') {
+            const day = now.getDay() || 7;
+            endDate = new Date(startDate.getTime() - 24 * 60 * 60 * 1000 * day); // Last Sunday
+            startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * 6); // Last Monday
+        } else if (timeline === 'last_month') {
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        } else if (timeline === 'this_year') {
+            startDate = new Date(now.getFullYear(), 0, 1);
+        } else if (timeline === 'all_time') {
+            startDate = new Date('2020-01-01'); // arbitrary old date
+        } else if (timeline === 'custom') {
+            const startVal = document.getElementById('date-start').value;
+            const endVal = document.getElementById('date-end').value;
+            if (startVal) startDate = new Date(startVal);
+            if (endVal) endDate = new Date(endVal);
+        }
+
+        return { startDate, endDate };
+    }
+
+    function generateDateRange(start, end) {
+        let dates = [];
+        let current = new Date(start);
+        const limit = new Date(end);
+
+        // Prevent infinite loops if end < start
+        if (limit < current) return dates;
+
+        // Ensure we don't generate too many points (e.g., all time)
+        const daysDiff = Math.floor((limit - current) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff > 365 * 5) {
+            return dates; // Fallback or handle differently
+        }
+
+        while (current <= limit) {
+            dates.push(current.toISOString().split('T')[0]);
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }
+
+    function updateGraph() {
+        const metric = document.getElementById('graph-metric').value;
+        const timeline = document.getElementById('graph-timeline').value;
+        const customInputs = document.getElementById('custom-date-inputs');
+
+        if (timeline === 'custom') {
+            customInputs.style.display = 'flex';
+        } else {
+            customInputs.style.display = 'none';
+        }
+
+        const { startDate, endDate } = getDatesForTimeline(timeline);
+
+        let labels = [];
+        let dataPoints = [];
+
+        if (timeline === 'all_time') {
+            // Group by month/year or just show dates that have data
+            const availableDates = Object.keys(globalDailyStats).sort();
+            if (availableDates.length > 0) {
+                 const firstDate = new Date(availableDates[0]);
+                 labels = generateDateRange(firstDate, endDate);
+            } else {
+                 labels = generateDateRange(startDate, endDate); // Fallback
+            }
+        } else {
+            labels = generateDateRange(startDate, endDate);
+        }
+
+        // Grouping data if the range is large (e.g. this_year, all_time)
+        // For simplicity, let's keep daily points for now, or aggregate if needed.
+        // Chart.js handles large datasets well if we just pass the daily points.
+
+        let aggregateLabels = [];
+        let aggregateDataPoints = [];
+
+        if (labels.length > 90) { // If more than 3 months, group by month
+            const monthData = {};
+            labels.forEach(dateStr => {
+                const month = dateStr.substring(0, 7); // YYYY-MM
+                if (!monthData[month]) monthData[month] = 0;
+                monthData[month] += (globalDailyStats[dateStr] && globalDailyStats[dateStr][metric]) ? globalDailyStats[dateStr][metric] : 0;
+            });
+            aggregateLabels = Object.keys(monthData).sort();
+            aggregateDataPoints = aggregateLabels.map(m => monthData[m]);
+        } else {
+            aggregateLabels = labels;
+            aggregateDataPoints = labels.map(dateStr => {
+                return (globalDailyStats[dateStr] && globalDailyStats[dateStr][metric]) ? globalDailyStats[dateStr][metric] : 0;
+            });
+        }
+
+        const ctx = document.getElementById('statsChart').getContext('2d');
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const metricLabels = {
+            visitors: 'Visitors',
+            sold: 'Books Sold',
+            sellers: 'Registered Sellers'
+        };
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: aggregateLabels,
+                datasets: [{
+                    label: metricLabels[metric],
+                    data: aggregateDataPoints,
+                    borderColor: '#00D2FF',
+                    backgroundColor: 'rgba(0, 210, 255, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: '#ccc' },
+                        grid: { color: '#333' }
+                    },
+                    x: {
+                        ticks: { color: '#ccc' },
+                        grid: { color: '#333' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                }
+            }
+        });
     }
 
     function renderReportsTable(tbodyId, data) {
