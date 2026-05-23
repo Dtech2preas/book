@@ -180,28 +180,10 @@ async function handleRequest(request) {
             dailyStats[launchDate] = { visitors: 0, sold: 0, sellers: 0 };
         }
 
-        // Sum current daily stats
-        let sumSold = 0;
-        let sumSellers = 0;
-        for (const date in dailyStats) {
-            sumSold += (dailyStats[date].sold || 0);
-            sumSellers += (dailyStats[date].sellers || 0);
-        }
-
+        // Calculate visitor difference and update daily visitors FIRST
+        const lastTotalVisitors = (stats && stats.lastTotalVisitors) ? stats.lastTotalVisitors : 0;
         let statsUpdated = false;
 
-        // Backfill sold and sellers
-        if (soldCount > sumSold) {
-            dailyStats[launchDate].sold += (soldCount - sumSold);
-            statsUpdated = true;
-        }
-        if (sellersCount > sumSellers) {
-            dailyStats[launchDate].sellers += (sellersCount - sumSellers);
-            statsUpdated = true;
-        }
-
-        // Calculate visitor difference and update daily visitors
-        const lastTotalVisitors = (stats && stats.lastTotalVisitors) ? stats.lastTotalVisitors : 0;
         if (visitorsCount > lastTotalVisitors) {
              if (lastTotalVisitors === 0) {
                  // First time fetching, backfill all visitors to launch date
@@ -216,6 +198,30 @@ async function handleRequest(request) {
              newStats.lastTotalVisitors = visitorsCount;
              await BOOKS_KV.put("system:stats", JSON.stringify(newStats));
              statsUpdated = true;
+        }
+
+        // Sum current daily stats
+        let sumSold = 0;
+        let sumSellers = 0;
+        let sumVisitors = 0;
+        for (const date in dailyStats) {
+            sumSold += (dailyStats[date].sold || 0);
+            sumSellers += (dailyStats[date].sellers || 0);
+            sumVisitors += (dailyStats[date].visitors || 0);
+        }
+
+        // Backfill sold and sellers and visitors
+        if (soldCount > sumSold) {
+            dailyStats[launchDate].sold += (soldCount - sumSold);
+            statsUpdated = true;
+        }
+        if (sellersCount > sumSellers) {
+            dailyStats[launchDate].sellers += (sellersCount - sumSellers);
+            statsUpdated = true;
+        }
+        if (visitorsCount > sumVisitors) {
+            dailyStats[launchDate].visitors += (visitorsCount - sumVisitors);
+            statsUpdated = true;
         }
 
         if (statsUpdated) {
