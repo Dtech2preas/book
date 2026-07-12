@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "651084247080",
+    "project_id": "notification-d72a5",
+    "storage_bucket": "notification-d72a5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:651084247080:android:113adcf9f2098e4b59851d",
+        "android_client_info": {
+          "package_name": "com.dtech.books.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW870yg8gjqIIoJPwYbbVFt8viL0QQhlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

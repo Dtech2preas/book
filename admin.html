@@ -326,6 +326,10 @@
             if (res.ok) {
                 document.getElementById('auth-section').style.display = 'none';
                 document.getElementById('main-section').style.display = 'block';
+                if (window.AndroidApp) {
+                    window.AndroidApp.getFcmToken();
+                }
+
                 fetchData();
             } else {
                 document.getElementById('auth-error').style.display = 'block';
@@ -620,6 +624,10 @@
             });
 
             if (res.ok) {
+                if (window.AndroidApp) {
+                    window.AndroidApp.getFcmToken();
+                }
+
                 fetchData();
             } else {
                 alert('Failed to approve');
@@ -640,6 +648,10 @@
             });
 
             if (res.ok) {
+                if (window.AndroidApp) {
+                    window.AndroidApp.getFcmToken();
+                }
+
                 fetchData();
             } else {
                 alert('Failed to delete');
@@ -660,6 +672,10 @@
             });
 
             if (res.ok) {
+                if (window.AndroidApp) {
+                    window.AndroidApp.getFcmToken();
+                }
+
                 fetchData();
             } else {
                 alert('Failed to dismiss report');
@@ -680,3 +696,20 @@
 <script src="terms-modal.js"></script>
 </body>
 </html>
+
+<script>
+window.onFcmTokenReceived = function(token) {
+    if (adminPass && workerUrl) {
+        fetch(workerUrl + 'admin/register-fcm-token', {
+            method: 'POST',
+            headers: {
+                'X-Admin-Password': adminPass,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: token })
+        }).then(res => res.json())
+          .then(data => console.log('FCM Token registered:', data))
+          .catch(err => console.error('FCM Token registration error:', err));
+    }
+};
+</script>
