@@ -1,9 +1,9 @@
 
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
+  event.respondWith(handleRequest(event.request, event))
 })
 
-async function handleRequest(request) {
+async function handleRequest(request, event) {
   const url = new URL(request.url);
 
   // Handle CORS
@@ -101,6 +101,25 @@ async function handleRequest(request) {
       // 4. Stats Endpoint: /stats
 
       // Admin Endpoint: /admin/books
+      // --- Admin Register FCM Token ---
+      if (url.pathname === '/admin/register-fcm-token' && request.method === 'POST') {
+        const password = request.headers.get("X-Admin-Password");
+        if (password !== "admin-secret-123") {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+        const body = await request.json();
+        if (body.token) {
+          const tokensStr = await BOOKS_KV.get("system:fcm_tokens");
+          let tokens = tokensStr ? JSON.parse(tokensStr) : [];
+          if (!tokens.includes(body.token)) {
+            tokens.push(body.token);
+            await BOOKS_KV.put("system:fcm_tokens", JSON.stringify(tokens));
+          }
+          return new Response(JSON.stringify({ success: true }), { headers });
+        }
+        return new Response(JSON.stringify({ error: "No token provided" }), { status: 400, headers });
+      }
+
       if (url.pathname === '/admin/books') {
         const password = request.headers.get("X-Admin-Password");
         if (password !== "admin-secret-123") {
@@ -437,6 +456,8 @@ async function handleRequest(request) {
         };
 
         await BOOKS_KV.put(reportId, JSON.stringify(reportData));
+        // Send FCM Notification
+        event.waitUntil(sendFCMNotification( "New Report", "A listing has been reported and requires review."));
         return new Response(JSON.stringify({ success: true, message: "Report submitted" }), { headers });
       }
 
@@ -509,6 +530,8 @@ async function handleRequest(request) {
 
       // Store in KV
       await BOOKS_KV.put(id, JSON.stringify(bookData));
+      // Send FCM Notification for new book
+      event.waitUntil(sendFCMNotification( "New Book Upload", body.title + " requires approval."));
 
       return new Response(JSON.stringify({ success: true, id: id, message: "Book added successfully", code: code }), { headers });
     } catch (err) {
@@ -729,4 +752,145 @@ async function handleRequest(request) {
   }
 
   return new Response("Not Found", { status: 404, headers });
+}
+async function sendFCMNotification(title, body) {
+  try {
+    if (typeof FCM_SERVICE_ACCOUNT_JSON === "undefined") {
+      console.error("FCM_SERVICE_ACCOUNT_JSON not defined in environment");
+      return;
+    }
+
+    if (!FCM_SERVICE_ACCOUNT_JSON) {
+      console.error("FCM_SERVICE_ACCOUNT_JSON not configured in environment");
+      return;
+    }
+
+    const tokensStr = await BOOKS_KV.get("system:fcm_tokens");
+    if (!tokensStr) return;
+    const tokens = JSON.parse(tokensStr);
+    if (!tokens || tokens.length === 0) return;
+
+    // A minimal implementation of JWT generation for Google OAuth2
+    // using Web Crypto API to avoid node-specific dependencies
+    const serviceAccount = JSON.parse(FCM_SERVICE_ACCOUNT_JSON);
+
+    // We will use a worker-friendly JWT generation function
+    const token = await generateGoogleOAuthToken(serviceAccount);
+
+    for (const deviceToken of tokens) {
+      const message = {
+        message: {
+          token: deviceToken,
+          notification: {
+            title: title,
+            body: body
+          }
+        }
+      };
+
+      const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message)
+      });
+
+      if (!response.ok) {
+        console.error("FCM Send Error:", await response.text());
+      }
+    }
+  } catch (err) {
+    console.error("FCM Error:", err);
+  }
+}
+
+// Helper functions for JWT
+function str2ab(str) {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+
+function base64url(source) {
+  let encodedSource = btoa(source);
+  encodedSource = encodedSource.replace(/=+$/, '');
+  encodedSource = encodedSource.replace(/\+/g, '-');
+  encodedSource = encodedSource.replace(/\//g, '_');
+  return encodedSource;
+}
+
+async function generateGoogleOAuthToken(serviceAccount) {
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  };
+
+  const stringifiedHeader = JSON.stringify(header);
+  const stringifiedPayload = JSON.stringify(payload);
+
+  const encodedHeader = base64url(stringifiedHeader);
+  const encodedPayload = base64url(stringifiedPayload);
+
+  const signatureInput = `${encodedHeader}.${encodedPayload}`;
+
+  // Import private key
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = serviceAccount.private_key.substring(
+    serviceAccount.private_key.indexOf(pemHeader) + pemHeader.length,
+    serviceAccount.private_key.indexOf(pemFooter)
+  ).replace(/\s/g, '');
+
+  const binaryDerString = atob(pemContents);
+  const binaryDer = str2ab(binaryDerString);
+
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: { name: 'SHA-256' },
+    },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(signatureInput)
+  );
+
+  const encodedSignature = base64url(String.fromCharCode(...new Uint8Array(signature)));
+  const jwt = `${signatureInput}.${encodedSignature}`;
+
+  // Exchange JWT for OAuth Token
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error_description || 'Failed to get OAuth token');
+  }
+
+  return data.access_token;
 }
