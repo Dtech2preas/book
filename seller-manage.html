@@ -614,8 +614,8 @@
             const result = await response.json();
 
             if (response.ok) {
-                showToast('Book deleted successfully');
-                loadBooks(code);
+                sessionStorage.setItem('adRedirectAction', 'delete');
+                window.location.href = 'https://omg10.com/4/11276842';
             } else {
                 showToast(result.error || 'Failed to delete book.');
             }
@@ -646,8 +646,8 @@
             const result = await response.json();
 
             if (response.ok) {
-                showToast('Your account and all data have been deleted successfully.');
-                logout();
+                sessionStorage.setItem('adRedirectAction', 'delete_account');
+                window.location.href = 'https://omg10.com/4/11276842';
             } else {
                 showToast(result.error || 'Failed to delete account.');
             }
@@ -681,6 +681,21 @@
     }).catch(err => {
         console.error("Config load error:", err);
         showToast("System configuration failed to load.");
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'delete') {
+                showToast('Book deleted successfully');
+                const storedCode = sessionStorage.getItem('sellerCode');
+                if (storedCode) loadBooks(storedCode);
+            } else if (adAction === 'delete_account') {
+                showToast('Your account and all data have been deleted successfully.');
+                logout();
+            }
+        }
     });
 </script>
 

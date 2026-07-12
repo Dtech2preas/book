@@ -1188,7 +1188,13 @@
         }
 
         if (phone) {
-             modalWhatsappBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+             const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+             modalWhatsappBtn.href = "javascript:void(0)";
+             modalWhatsappBtn.onclick = (e) => {
+                 e.preventDefault();
+                 window.open(whatsappLink, '_blank');
+                 window.location.href = 'https://omg10.com/4/11276842';
+             };
              modalWhatsappBtn.style.display = 'inline-block';
         } else {
              modalWhatsappBtn.style.display = 'none';
@@ -1253,8 +1259,8 @@
             });
             const result = await response.json();
             if (response.ok) {
-                showToast('Report submitted successfully. We will review it shortly.');
-                closeReportModal();
+                sessionStorage.setItem('adRedirectAction', 'report');
+                window.location.href = 'https://omg10.com/4/11276842';
             } else {
                 showToast(result.error || 'Failed to submit report.');
             }
@@ -1366,7 +1372,7 @@
 
             let contactButtonHtml = '';
             if (whatsappLink) {
-                contactButtonHtml = `<a href="${whatsappLink}" target="_blank" class="contact-btn">${isLookingFor ? 'WhatsApp Buyer' : 'WhatsApp Seller'}</a>`;
+                contactButtonHtml = `<a href="javascript:void(0)" onclick="window.open('${whatsappLink}', '_blank'); window.location.href='https://omg10.com/4/11276842';" class="contact-btn">${isLookingFor ? 'WhatsApp Buyer' : 'WhatsApp Seller'}</a>`;
             } else {
                 contactButtonHtml = `<span class="contact-btn" style="background-color: #555; cursor: not-allowed;">No Info</span>`;
             }
@@ -1480,6 +1486,16 @@
         WORKER_URL = config.workerUrl;
         if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
         fetchBooks();
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'report') {
+                showToast('Report submitted successfully. We will review it shortly.');
+            }
+        }
     });
 </script>
 <script src="terms-modal.js"></script>

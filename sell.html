@@ -255,7 +255,7 @@
         <div class="code-display" id="sellerCodeDisplay">XXXX</div>
         <p style="font-size: 0.9rem; color: #ccc;">You can use this code to manage your listings. Click the small blue icon in the top right corner of the home page to view or delete your books.</p>
         <button class="manual-btn" style="margin: 1rem auto; width: auto;" onclick="openManualModal()">Read User Manual</button>
-        <button onclick="window.location.href='index.html'" style="margin-top:1rem;">Back to Home</button>
+        <button onclick="sessionStorage.setItem('adRedirectAction', 'upload'); window.location.href='https://omg10.com/4/11276842'" style="margin-top:1rem;">Back to Home</button>
     </div>
 </div>
 
@@ -417,6 +417,18 @@
             alert('Network error.');
             btn.textContent = 'Submit Book';
             btn.disabled = false;
+        }
+    });
+
+    // Check for ad redirect action on load (in case they pressed back)
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'upload') {
+                alert('Book uploaded successfully!');
+                window.location.replace('index.html'); // Then properly go home
+            }
         }
     });
 </script>
