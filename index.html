@@ -727,6 +727,15 @@
 
     <div class="search-bar" style="margin-top: 1.5rem;">
         <input type="text" id="search-input" placeholder="Search books by title, author, or seller...">
+        <select id="campus-select">
+            <option value="all">All Campuses</option>
+            <option value="South Campus">South Campus</option>
+            <option value="North Campus">North Campus</option>
+            <option value="Second Avenue Campus">Second Avenue Campus</option>
+            <option value="Missionvale Campus">Missionvale Campus</option>
+            <option value="Bird Street Campus">Bird Street Campus</option>
+            <option value="George Campus">George Campus</option>
+        </select>
         <select id="sort-select">
             <option value="newest">Newest First</option>
             <option value="a-z">A-Z</option>
@@ -764,6 +773,11 @@
             <div class="modal-meta">
                 <p><strong id="modal-seller-label">Seller:</strong> <span id="modal-seller">-</span></p>
                 <p><strong>Listed:</strong> <span id="modal-date">-</span></p>
+                <div id="modal-campus-container" style="display: none; margin-top: 10px;">
+                    <label for="modal-campus-select" style="font-weight: bold; color: #ccc; font-size: 0.85rem; display: block; margin-bottom: 5px;">Preferred Meeting Point:</label>
+                    <select id="modal-campus-select" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--primary-color); background: #111; color: #fff;">
+                    </select>
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -1178,20 +1192,47 @@
         }
         modalDate.innerText = dateStr;
 
-        // WhatsApp
-        const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
-        let message = '';
-        if (isLookingFor) {
-            message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
+        // Campus Selection
+        const campusContainer = document.getElementById("modal-campus-container");
+        const campusSelect = document.getElementById("modal-campus-select");
+        campusSelect.innerHTML = "";
+
+        let hasCampuses = false;
+        if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+            hasCampuses = true;
+            book.campuses.forEach(campus => {
+                const opt = document.createElement("option");
+                opt.value = campus;
+                opt.innerText = campus;
+                campusSelect.appendChild(opt);
+            });
+            campusContainer.style.display = "block";
         } else {
-            message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${window.appConfig.siteName} website.`;
+            campusContainer.style.display = "none";
         }
 
+        // WhatsApp
+        const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
+
         if (phone) {
-             const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
              modalWhatsappBtn.href = "javascript:void(0)";
              modalWhatsappBtn.onclick = (e) => {
                  e.preventDefault();
+
+                 let selectedCampusMsg = "";
+                 if (hasCampuses) {
+                     const chosen = campusSelect.value;
+                     selectedCampusMsg = ` Can we meet at ${chosen}?`;
+                 }
+
+                 let message = '';
+                 if (isLookingFor) {
+                     message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}.${selectedCampusMsg} Are you still interested?`;
+                 } else {
+                     message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${window.appConfig.siteName} website.${selectedCampusMsg}`;
+                 }
+
+                 const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                  window.open(whatsappLink, '_blank');
                  window.location.href = 'https://omg10.com/4/11276842';
              };
@@ -1392,6 +1433,16 @@
             // New Badge HTML
             const badgeHtml = isNew ? `<span class="badge-new">NEW</span>` : '';
 
+            let campusesStr = "Delivery: Not Specified";
+            if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+                // If there are multiple locations, format nicely. The user requested:
+                // Collection: South Campus, North Campus etc
+                // We'll strip the word "Campus" for brevity if there are many, except George etc.
+                // Actually, let's just join them as requested: "South, North, Second..."
+                let parts = book.campuses.map(c => c.replace(' Campus', '').replace('Campus', '').trim());
+                campusesStr = `Collection: ${escapeHtml(parts.join(', '))}`;
+            }
+
             card.innerHTML = `
                 ${badgeHtml}
                 ${shareBtnHtml}
@@ -1400,7 +1451,8 @@
                     <h2 class="book-title">${escapeHtml(book.title)}</h2>
                     <div class="book-author">By ${escapeHtml(book.author && book.author !== 'Not provided' ? book.author : 'Unknown')}</div>
                     <div class="book-price">${escapeHtml(book.price)} ${book.isNegotiable ? '<span style="font-size: 0.8em; color: #aaa;">(Negotiable)</span>' : ''}</div>
-                    <div class="book-seller">${isLookingFor ? 'Buyer' : 'Seller'}: ${escapeHtml(book.seller)}</div>
+                    <div class="book-seller" style="margin-bottom: 0.2rem;">${isLookingFor ? 'Buyer' : 'Seller'}: ${escapeHtml(book.seller)}</div>
+                    <div class="book-seller" style="font-size: 0.75rem; color: var(--primary-color); margin-bottom: 1rem;">${campusesStr}</div>
                     ${contactButtonHtml}
                 </div>
             `;
@@ -1419,6 +1471,7 @@
     }
 
     const sortSelect = document.getElementById('sort-select');
+    const campusSelect = document.getElementById('campus-select');
 
     function sortBooks() {
         const criteria = sortSelect.value;
@@ -1447,6 +1500,7 @@
 
     function applyFilterAndSort() {
         const query = searchInput.value.toLowerCase();
+        const selectedCampus = campusSelect.value;
         sortBooks();
 
         const tokens = query.split(/\s+/).filter(t => t.length > 0);
@@ -1455,6 +1509,13 @@
             // Check tab type
             const bookType = book.type || 'buy';
             if (bookType !== currentTab) return false;
+
+            // Check campus
+            if (selectedCampus !== 'all') {
+                if (!book.campuses || !Array.isArray(book.campuses) || !book.campuses.includes(selectedCampus)) {
+                    return false;
+                }
+            }
 
             const title = (book.title || '').toLowerCase();
             const seller = (book.seller || '').toLowerCase();
@@ -1471,6 +1532,7 @@
 
     searchInput.addEventListener('input', applyFilterAndSort);
     sortSelect.addEventListener('change', applyFilterAndSort);
+    campusSelect.addEventListener('change', applyFilterAndSort);
 
     function escapeHtml(text) {
         if (!text) return '';
