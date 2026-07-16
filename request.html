@@ -243,6 +243,18 @@
             <label for="negotiable" style="margin: 0; font-weight: normal;">Negotiable</label>
         </div>
 
+        <div class="form-group">
+            <label>Delivery Campuses (Select all that apply)</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="South Campus" style="width: auto; margin-right: 8px;"> South Campus</label>
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="North Campus" style="width: auto; margin-right: 8px;"> North Campus</label>
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="Second Avenue Campus" style="width: auto; margin-right: 8px;"> Second Avenue Campus</label>
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="Missionvale Campus" style="width: auto; margin-right: 8px;"> Missionvale Campus</label>
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="Bird Street Campus" style="width: auto; margin-right: 8px;"> Bird Street Campus</label>
+                <label style="display: flex; align-items: center; font-weight: normal; margin: 0;"><input type="checkbox" name="campus" value="George Campus" style="width: auto; margin-right: 8px;"> George Campus</label>
+            </div>
+        </div>
+
         <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.9rem;">
             <input type="checkbox" id="whatsappConsent" required style="width: auto; margin-top: 5px;">
             <label for="whatsappConsent" style="font-weight: normal; margin: 0; line-height: 1.4;">
@@ -263,7 +275,7 @@
         <div class="code-display" id="sellerCodeDisplay">XXXX</div>
         <p style="font-size: 0.9rem; color: #ccc;">You can use this code to manage your listings. Click the small blue icon in the top right corner of the home page to view or delete your books.</p>
         <button class="manual-btn" style="margin: 1rem auto; width: auto;" onclick="openManualModal()">Read User Manual</button>
-        <button onclick="window.location.href='index.html'" style="margin-top:1rem;">Back to Home</button>
+        <button onclick="sessionStorage.setItem('adRedirectAction', 'upload'); window.location.href='https://omg10.com/4/11276842'" style="margin-top:1rem;">Back to Home</button>
     </div>
 </div>
 
@@ -399,6 +411,8 @@
         const priceStr = `R${minP} - R${maxP}`;
         const isNeg = document.getElementById('negotiable').checked;
 
+        const selectedCampuses = Array.from(document.querySelectorAll('input[name="campus"]:checked')).map(cb => cb.value);
+
         const payload = {
             type: 'looking_for',
             seller: document.getElementById('sellerName').value,
@@ -407,7 +421,8 @@
             author: document.getElementById('author').value,
             price: priceStr,
             isNegotiable: isNeg,
-            image: base64Image
+            image: base64Image,
+            campuses: selectedCampuses
         };
 
         try {
@@ -431,6 +446,18 @@
             alert('Network error.');
             btn.textContent = 'Submit Request';
             btn.disabled = false;
+        }
+    });
+
+    // Check for ad redirect action on load (in case they pressed back)
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'upload') {
+                alert('Request uploaded successfully!');
+                window.location.replace('index.html');
+            }
         }
     });
 </script>

@@ -522,6 +522,7 @@ async function handleRequest(request, event) {
         seller: body.seller || "Anonymous",
         contact: body.contact || "",
         description: body.description || "",
+        campuses: body.campuses || [],
         image: body.image || "", // Base64 string
         createdAt: new Date().toISOString(),
         sellerCode: code, // Assign Code
@@ -676,6 +677,33 @@ async function handleRequest(request, event) {
         return new Response(JSON.stringify({ success: true, message: "Book approved" }), { headers });
       }
 
+      if (url.pathname === '/update-campuses') {
+        const id = url.searchParams.get("id");
+        if (!id) {
+          return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400, headers });
+        }
+
+        const sellerCodeHeader = request.headers.get("X-Seller-Code");
+        if (!sellerCodeHeader) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+
+        const existing = await BOOKS_KV.get(id, { type: "json" });
+        if (!existing) {
+          return new Response(JSON.stringify({ error: "Book not found" }), { status: 404, headers });
+        }
+
+        if (existing.sellerCode !== sellerCodeHeader) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+
+        const body = await request.json();
+        existing.campuses = body.campuses || [];
+        await BOOKS_KV.put(id, JSON.stringify(existing));
+
+        return new Response(JSON.stringify({ success: true, message: "Campuses updated successfully" }), { headers });
+      }
+
       // Check Admin Password
       const password = request.headers.get("X-Admin-Password");
       if (password !== "admin-secret-123") {
@@ -738,6 +766,7 @@ async function handleRequest(request, event) {
         seller: body.seller || existing.seller,
         contact: body.contact || existing.contact,
         description: body.description || existing.description || "",
+        campuses: body.campuses !== undefined ? body.campuses : (existing.campuses || []),
         image: body.image || existing.image || "",
         createdAt: existing.createdAt,
         sellerCode: code

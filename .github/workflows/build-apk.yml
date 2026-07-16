@@ -24,7 +24,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Make Gradle Executable
-        run: chmod +x gradlew
+        run: chmod +x ../gradlew
 
       - name: Build Debug APK
         run: ./gradlew :admin-app:assembleDebug

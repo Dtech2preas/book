@@ -336,6 +336,27 @@
     </div>
 </div>
 
+<!-- Campus Edit Modal -->
+<div id="campusEditModal" class="modal" style="display: none; align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" style="float: right; cursor: pointer; font-size: 1.5rem; margin-top: -10px;" onclick="closeCampusModal()">&times;</span>
+        <h2 style="color: var(--primary-color);">Update Delivery Points</h2>
+        <p style="font-size: 0.9rem; color: #ccc;">Select the campuses where you are willing to deliver this book.</p>
+
+        <form id="campus-edit-form" style="text-align: left; margin-top: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label><input type="checkbox" name="edit-campus" value="South Campus"> South Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="North Campus"> North Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Second Avenue Campus"> Second Avenue Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Missionvale Campus"> Missionvale Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Bird Street Campus"> Bird Street Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="George Campus"> George Campus</label>
+            </div>
+            <button type="submit" id="campus-save-btn" style="width: 100%; margin-top: 1.5rem; padding: 10px; background-color: var(--primary-color); color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Save Changes</button>
+        </form>
+    </div>
+</div>
+
 <footer class="footer-text">
 </footer>
 
@@ -580,18 +601,89 @@
                 ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
                 : 'https://via.placeholder.com/300x400?text=No+Cover';
 
+            let campusesStr = "Delivery: Not Specified";
+            if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+                let parts = book.campuses.map(c => c.replace(' Campus', '').replace('Campus', '').trim());
+                campusesStr = `Collection: ${parts.join(', ')}`;
+            }
+
             item.innerHTML = `
                 <img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.src='${fallbackSrc}'">
                 <div class="book-info">
                     <div class="book-title">${typeBadge} ${book.title}</div>
                     <div style="margin-top: 5px;">${statusBadge}</div>
                     <div class="book-price" style="margin-top: 5px;">${book.price}</div>
+                    <div style="margin-top: 5px; font-size: 0.8rem; color: #888;">${campusesStr}</div>
                 </div>
-                <button class="delete-btn" onclick="deleteBook('${book.id}')">Delete</button>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <button class="manual-btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="openCampusModal('${book.id}')">Update Delivery</button>
+                    <button class="delete-btn" onclick="deleteBook('${book.id}')">Delete</button>
+                </div>
             `;
             bookList.appendChild(item);
         });
     }
+
+    let currentEditCampusBookId = null;
+
+    window.openCampusModal = function(id) {
+        currentEditCampusBookId = id;
+        document.getElementById('campusEditModal').style.display = 'flex';
+        // Uncheck all first
+        const checkboxes = document.querySelectorAll('input[name="edit-campus"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    };
+
+    window.closeCampusModal = function() {
+        document.getElementById('campusEditModal').style.display = 'none';
+        currentEditCampusBookId = null;
+    };
+
+    document.getElementById('campus-edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!currentEditCampusBookId) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            showToast('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        const selectedCampuses = Array.from(document.querySelectorAll('input[name="edit-campus"]:checked')).map(cb => cb.value);
+
+        const btn = document.getElementById('campus-save-btn');
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`${WORKER_URL}update-campuses?id=${currentEditCampusBookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Seller-Code': code
+                },
+                body: JSON.stringify({ campuses: selectedCampuses })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Delivery points updated successfully.');
+                closeCampusModal();
+                loadBooks(code);
+            } else {
+                showToast(result.error || 'Failed to update delivery points.');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        } finally {
+            btn.textContent = 'Save Changes';
+            btn.disabled = false;
+        }
+    });
 
     window.deleteBook = async function(id) {
         if (!confirm('Are you sure you want to remove this book? This action cannot be undone.')) return;
@@ -614,8 +706,8 @@
             const result = await response.json();
 
             if (response.ok) {
-                showToast('Book deleted successfully');
-                loadBooks(code);
+                sessionStorage.setItem('adRedirectAction', 'delete');
+                window.location.href = 'https://omg10.com/4/11276842';
             } else {
                 showToast(result.error || 'Failed to delete book.');
             }
@@ -646,8 +738,8 @@
             const result = await response.json();
 
             if (response.ok) {
-                showToast('Your account and all data have been deleted successfully.');
-                logout();
+                sessionStorage.setItem('adRedirectAction', 'delete_account');
+                window.location.href = 'https://omg10.com/4/11276842';
             } else {
                 showToast(result.error || 'Failed to delete account.');
             }
@@ -681,6 +773,21 @@
     }).catch(err => {
         console.error("Config load error:", err);
         showToast("System configuration failed to load.");
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'delete') {
+                showToast('Book deleted successfully');
+                const storedCode = sessionStorage.getItem('sellerCode');
+                if (storedCode) loadBooks(storedCode);
+            } else if (adAction === 'delete_account') {
+                showToast('Your account and all data have been deleted successfully.');
+                logout();
+            }
+        }
     });
 </script>
 
