@@ -1,0 +1,7 @@
+name = "mute-snowflake-4d2a"
+main = "worker.js"
+compatibility_date = "2024-05-20"
+
+[[kv_namespaces]]
+binding = "BOOKS_KV"
+id = "7bf4374f122941deb625ca317b7b10ca"
