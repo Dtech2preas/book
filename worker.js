@@ -35,6 +35,52 @@ async function handleRequest(request, event) {
 
   if (request.method === 'GET') {
     try {
+
+      // --- Admin List Ambassadors ---
+      if (url.pathname === '/admin/ambassadors') {
+        const password = request.headers.get("X-Admin-Password");
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+
+        const list = await BOOKS_KV.list({ prefix: "amb:" });
+        const ambassadors = [];
+        for (const key of list.keys) {
+            const val = await BOOKS_KV.get(key.name, { type: "json" });
+            if (val) {
+                const statKey = "amb_stats:" + val.id;
+                const stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+                const { password: _, ...safeData } = val;
+                ambassadors.push({ ...safeData, stats });
+            }
+        }
+
+        // Also get active keys
+        const keysList = await BOOKS_KV.list({ prefix: "ambassador_key:" });
+        const activeKeys = keysList.keys.map(k => k.name.split(':')[1]);
+
+        return new Response(JSON.stringify({ ambassadors, activeKeys }), { headers });
+      }
+
+      // --- Ambassador Stats Endpoint ---
+      if (url.pathname === '/ambassador/stats') {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader || !authHeader.startsWith("Bearer ")) {
+              return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+          }
+          const token = authHeader.split(" ")[1];
+          let ambId;
+          try {
+              ambId = atob(token).split(":")[0];
+          } catch(e) {
+              return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers });
+          }
+
+          const statKey = "amb_stats:" + ambId;
+          const stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+          return new Response(JSON.stringify({ success: true, stats }), { headers });
+      }
+
       // 1. Image Endpoint: /image?id=...
       if (url.pathname === '/image') {
         const id = url.searchParams.get("id");
@@ -75,7 +121,7 @@ async function handleRequest(request, event) {
       if (url.pathname === '/sellers') {
         // Check Admin Password
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
 
@@ -104,7 +150,7 @@ async function handleRequest(request, event) {
       // --- Admin Register FCM Token ---
       if (url.pathname === '/admin/register-fcm-token' && request.method === 'POST') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
         const body = await request.json();
@@ -122,7 +168,7 @@ async function handleRequest(request, event) {
 
       if (url.pathname === '/admin/books') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
         const list = await BOOKS_KV.list({ prefix: "book:" });
@@ -138,7 +184,7 @@ async function handleRequest(request, event) {
       // --- Admin Reports ---
       if (url.pathname === '/admin/reports') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
         const list = await BOOKS_KV.list({ prefix: "report:" });
@@ -244,7 +290,18 @@ async function handleRequest(request, event) {
         }
 
         if (statsUpdated) {
-            await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
+
+      await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
+
+      // Track ambassador purchase
+      const bookToDel = await BOOKS_KV.get(id, { type: "json" });
+      if (bookToDel && bookToDel.ref) {
+          const statKey = "amb_stats:" + bookToDel.ref;
+          let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+          stats.purchases++;
+          await BOOKS_KV.put(statKey, JSON.stringify(stats));
+      }
+
         }
 
         return new Response(JSON.stringify({
@@ -284,6 +341,95 @@ async function handleRequest(request, event) {
   if (request.method === 'POST') {
     try {
       const url = new URL(request.url);
+
+      // --- Ambassador Registration Endpoint ---
+      if (url.pathname === '/ambassador/register') {
+        const body = await request.json();
+        const { approvalKey, name, email, password } = body;
+
+        if (!approvalKey || !name || !email || !password) {
+            return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers });
+        }
+
+        // Verify key
+        const keyDataStr = await BOOKS_KV.get("ambassador_key:" + approvalKey);
+        if (!keyDataStr) {
+            return new Response(JSON.stringify({ error: "Invalid or expired approval key" }), { status: 400, headers });
+        }
+
+        const ambassadorId = "amb:" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
+        const ambassadorData = {
+            id: ambassadorId,
+            name,
+            email,
+            password, // Simple for now, ideally hashed
+            createdAt: new Date().toISOString()
+        };
+
+        await BOOKS_KV.put(ambassadorId, JSON.stringify(ambassadorData));
+        await BOOKS_KV.delete("ambassador_key:" + approvalKey); // Use key once
+
+        return new Response(JSON.stringify({ success: true }), { headers });
+      }
+
+      // --- Ambassador Login Endpoint ---
+      if (url.pathname === '/ambassador/login') {
+        const body = await request.json();
+        const { email, password } = body;
+
+        if (!email || !password) {
+            return new Response(JSON.stringify({ error: "Missing email or password" }), { status: 400, headers });
+        }
+
+        const list = await BOOKS_KV.list({ prefix: "amb:" });
+        let found = null;
+        for (const key of list.keys) {
+            const val = await BOOKS_KV.get(key.name, { type: "json" });
+            if (val && val.email === email && val.password === password) {
+                found = val;
+                break;
+            }
+        }
+
+        if (!found) {
+            return new Response(JSON.stringify({ error: "Invalid credentials" }), { status: 401, headers });
+        }
+
+        // Dummy token generation for basic auth
+        const token = btoa(found.id + ":" + Date.now());
+        const { password: _, ...safeData } = found;
+
+        return new Response(JSON.stringify({ token, ambassador: safeData }), { headers });
+      }
+
+      // --- Admin Generate Ambassador Key ---
+      if (url.pathname === '/admin/ambassador/keys') {
+        const adminPass = request.headers.get("X-Admin-Password");
+        if (adminPass !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+        }
+
+        const key = Math.random().toString(36).substring(2, 10).toUpperCase();
+        // 24 hours expiry
+        await BOOKS_KV.put("ambassador_key:" + key, JSON.stringify({ createdAt: Date.now() }), { expirationTtl: 86400 });
+
+        return new Response(JSON.stringify({ success: true, key }), { headers });
+      }
+
+      // --- Track Events ---
+      if (url.pathname === '/track') {
+          const body = await request.json();
+          const { ref, event } = body; // event: 'install', 'view'
+          if (ref && event) {
+             const statKey = "amb_stats:" + ref;
+             let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+             if (event === 'install') stats.installs++;
+             if (event === 'view') stats.views++;
+             await BOOKS_KV.put(statKey, JSON.stringify(stats));
+          }
+          return new Response(JSON.stringify({ success: true }), { headers });
+      }
+
 
       // --- Extract Text Endpoint (Groq API) ---
       if (url.pathname === '/extract-text') {
@@ -369,7 +515,7 @@ async function handleRequest(request, event) {
       // --- Admin Migration Endpoint ---
       if (url.pathname === '/admin/migrate') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
 
@@ -529,6 +675,16 @@ async function handleRequest(request, event) {
         status: 'pending'
       };
 
+      // Track referral listing if ref exists
+      if (body.ref) {
+          const statKey = "amb_stats:" + body.ref;
+          let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+          stats.listings++;
+          await BOOKS_KV.put(statKey, JSON.stringify(stats));
+          bookData.ref = body.ref; // Store the attribution
+      }
+
+
       // Store in KV
       await BOOKS_KV.put(id, JSON.stringify(bookData));
       // Send FCM Notification for new book
@@ -544,7 +700,7 @@ async function handleRequest(request, event) {
     try {
       if (url.pathname === '/admin/reports') {
           const password = request.headers.get("X-Admin-Password");
-          if (password !== "admin-secret-123") {
+          if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
           }
 
@@ -606,7 +762,7 @@ async function handleRequest(request, event) {
       let authorized = false;
 
       // 1. Admin Auth
-      if (adminPassword === "admin-secret-123") {
+      if (adminPassword === (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           authorized = true;
           // Decrement count in map? Ideally yes, but for simplicity/performance we might skip updating count strictly.
           // Or we can try to update it.
@@ -657,7 +813,7 @@ async function handleRequest(request, event) {
       // --- Approve Endpoint ---
       if (url.pathname === '/admin/approve') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== "admin-secret-123") {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
 
@@ -706,7 +862,7 @@ async function handleRequest(request, event) {
 
       // Check Admin Password
       const password = request.headers.get("X-Admin-Password");
-      if (password !== "admin-secret-123") {
+      if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
       }
 

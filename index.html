@@ -682,6 +682,7 @@
             .modal-info { padding: 1.5rem; }
         }
     </style>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
@@ -1561,5 +1562,21 @@
     });
 </script>
 <script src="terms-modal.js"></script>
+
+    <!-- First Launch Welcome Modal -->
+    <div id="welcome-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h2 style="color: var(--primary-color);">Welcome to D-TECH!</h2>
+            <p>The Student Marketplace</p>
+            <p style="font-size: 0.9em; color: #ccc;">Were you referred by an Ambassador? Scan their QR code or enter their ID below to support them!</p>
+
+            <div id="qr-reader" style="width:100%; margin: 15px auto;"></div>
+
+            <input type="text" id="manual-ref" placeholder="Enter Ambassador ID (optional)" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; background: #000; color: #fff; border: 1px solid #333; border-radius: 5px;">
+            <button class="btn" style="width: 100%; margin-bottom: 10px;" onclick="saveReferral()">Continue</button>
+            <button class="btn" style="width: 100%; background: #333; color: #fff;" onclick="skipReferral()">Skip</button>
+        </div>
+    </div>
+
 </body>
 </html>

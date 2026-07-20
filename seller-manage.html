@@ -477,6 +477,7 @@
         btn.disabled = true;
 
         const payload = {
+                    ref: localStorage.getItem('dtech_ref') || undefined,
             type: 'buy',
             seller: sellerName,
             contact: sellerContact,

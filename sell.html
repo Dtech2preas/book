@@ -401,6 +401,7 @@
         const selectedCampuses = Array.from(document.querySelectorAll('input[name="campus"]:checked')).map(cb => cb.value);
 
         const payload = {
+                    ref: localStorage.getItem('dtech_ref') || undefined,
             type: 'buy',
             seller: document.getElementById('sellerName').value,
             contact: document.getElementById('contact').value,
