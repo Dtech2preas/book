@@ -5,6 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <script src="config.js"></script>
+    <script>
+        async function loadAmbassadors() {
+            try {
+                const res = await fetch(workerUrl + 'admin/ambassadors', {
+                    headers: { 'X-Admin-Password': currentPassword }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Render keys
+                    const keysContainer = document.getElementById('active-keys-list');
+                    if (data.activeKeys && data.activeKeys.length > 0) {
+                        keysContainer.innerHTML = data.activeKeys.map(k => `<span style="background:#333; padding:5px 10px; border-radius:15px; margin-right:10px; font-family:monospace;">${k}</span>`).join('');
+                    } else {
+                        keysContainer.innerHTML = 'No active keys.';
+                    }
+
+                    // Render ambassadors
+                    const tbody = document.getElementById('ambassadors-list');
+                    tbody.innerHTML = '';
+
+                    if (data.ambassadors && data.ambassadors.length > 0) {
+                        data.ambassadors.forEach(amb => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${amb.name}</td>
+                                <td>${amb.email}</td>
+                                <td>${amb.stats.installs || 0}</td>
+                                <td>${amb.stats.views || 0}</td>
+                                <td>${amb.stats.listings || 0}</td>
+                                <td>${amb.stats.purchases || 0}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No ambassadors registered yet.</td></tr>';
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading ambassadors", err);
+            }
+        }
+
+        async function generateAmbassadorKey() {
+            try {
+                const res = await fetch(workerUrl + 'admin/ambassador/keys', {
+                    method: 'POST',
+                    headers: { 'X-Admin-Password': currentPassword }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert("Generated Key: " + data.key + "\n\nCopy this and send it to the ambassador. It expires in 24 hours.");
+                    loadAmbassadors();
+                } else {
+                    alert("Failed to generate key");
+                }
+            } catch (err) {
+                console.error("Error generating key", err);
+            }
+        }
+
+</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -178,6 +241,7 @@
             <button class="tab" onclick="switchTab('pending')">Pending Approvals</button>
             <button class="tab" onclick="switchTab('inventory')">Inventory</button>
             <button class="tab" onclick="switchTab('reports')">Reports</button>
+            <button class="tab" onclick="switchTab('ambassadors')">Ambassadors</button>
         </div>
 
         <!-- Dashboard Tab -->
@@ -254,6 +318,39 @@
                 </thead>
                 <tbody id="pending-tbody"></tbody>
             </table>
+        </div>
+
+
+        <!-- Ambassadors Tab -->
+        <div id="ambassadors" class="tab-content">
+            <div class="card" style="margin-bottom: 2rem;">
+                <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem;">
+                    <h2 style="margin:0;">Active Approval Keys</h2>
+                    <button class="btn" style="width:auto;" onclick="generateAmbassadorKey()">Generate Key (24h)</button>
+                </div>
+                <div id="active-keys-list" style="color:#aaa; font-size:0.9em; margin-bottom:1rem;"></div>
+            </div>
+
+            <div class="card">
+                <h2>Registered Ambassadors</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Installs</th>
+                                <th>Views</th>
+                                <th>Listings</th>
+                                <th>Purchases</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ambassadors-list">
+                            <!-- Ambassadors will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Inventory Tab -->
@@ -341,12 +438,21 @@
         });
     }
 
+
     function switchTab(tabId) {
         document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
 
         document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
         document.getElementById(tabId).classList.add('active');
+
+        if(tabId === 'inventory' || tabId === 'pending') {
+            loadBooks();
+        } else if (tabId === 'reports') {
+            loadReports();
+        } else if (tabId === 'ambassadors') {
+            loadAmbassadors();
+        }
     }
 
     let chartInstance = null;

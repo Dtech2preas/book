@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build Debug APKs
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build APK
+    name: Build APKs
     runs-on: ubuntu-latest
 
     steps:
@@ -26,11 +26,29 @@ jobs:
       - name: Make Gradle Executable
         run: chmod +x ./gradlew
 
-      - name: Build Debug APK
+      - name: Build App APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Build Admin App APK
         run: ./gradlew :admin-app:assembleDebug
 
-      - name: Upload APK Artifact
+      - name: Build Ambassador App APK
+        run: ./gradlew :ambassador-app:assembleDebug
+
+      - name: Upload App APK
         uses: actions/upload-artifact@v4
         with:
-          name: dtech-marketplace-debug
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Admin App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app-debug
           path: admin-app/build/outputs/apk/debug/admin-app-debug.apk
+
+      - name: Upload Ambassador App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ambassador-app-debug
+          path: ambassador-app/build/outputs/apk/debug/ambassador-app-debug.apk
