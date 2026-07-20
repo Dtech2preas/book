@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "DTech Marketplace"
-include ':app', ':admin-app'
+include ':app', ':admin-app', ':ambassador-app'
