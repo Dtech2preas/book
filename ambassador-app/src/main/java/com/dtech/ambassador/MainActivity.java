@@ -27,6 +27,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.List;
+
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.view.Gravity;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+
+
+
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
@@ -101,7 +119,30 @@ public class MainActivity extends AppCompatActivity {
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("QR Offline Share Active");
-            builder.setMessage("1. Ask receiver to connect to your Wi-Fi or Hotspot.\n2. Have them type this URL in their browser: \n\n" + url + "\n\n(A real implementation would generate a visual QR code here)");
+
+            LinearLayout layout = new LinearLayout(this);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.setPadding(50, 40, 50, 10);
+
+            TextView instructions = new TextView(this);
+            instructions.setText("1. Ask receiver to connect to your Wi-Fi or Hotspot.\n2. Have them scan this QR code or go to:\n" + url);
+            instructions.setTextSize(16);
+            layout.addView(instructions);
+
+            Bitmap qrBitmap = generateQRCode(url);
+            if (qrBitmap != null) {
+                ImageView qrImage = new ImageView(this);
+                qrImage.setImageBitmap(qrBitmap);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        600); // adjust height as needed
+                params.setMargins(0, 30, 0, 0);
+                params.gravity = Gravity.CENTER;
+                qrImage.setLayoutParams(params);
+                layout.addView(qrImage);
+            }
+
+            builder.setView(layout);
             builder.setPositiveButton("Stop Sharing", (dialog, which) -> {
                 if(server != null) server.stop();
             });
@@ -113,17 +154,67 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private String getLocalIpAddress() {
         try {
+            // First try WifiManager for normal wifi connection
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            return Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+            if (wm != null && wm.getConnectionInfo() != null && wm.getConnectionInfo().getIpAddress() != 0) {
+                String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+                if (ip != null && !ip.equals("0.0.0.0")) {
+                    return ip;
+                }
+            }
+
+            // If WifiManager fails (e.g. Mobile Hotspot is on), check network interfaces
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                // Ignore loopback and inactive interfaces
+                if (!intf.isUp() || intf.isLoopback()) {
+                    continue;
+                }
+
+                // Hotspot interfaces are often named ap0, wlan0, etc.
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress() && addr.getAddress().length == 4) { // IPv4
+                        String ip = addr.getHostAddress();
+                        if (ip != null && !ip.equals("0.0.0.0")) {
+                            return ip;
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+
+    private Bitmap generateQRCode(String text) {
+        QRCodeWriter writer = new QRCodeWriter();
+        try {
+            BitMatrix bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, 512, 512);
+            int width = bitMatrix.getWidth();
+            int height = bitMatrix.getHeight();
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            return bitmap;
+        } catch (WriterException e) {
+            e.printStackTrace();
             return null;
         }
     }
 
     @Override
     protected void onDestroy() {
+
         super.onDestroy();
         if (server != null) {
             server.stop();
