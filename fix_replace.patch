@@ -1,0 +1,20 @@
+--- worker.js
++++ worker.js
+@@ -296,7 +296,7 @@
+       // Track ambassador purchase
+       const bookToDel = await BOOKS_KV.get(id, { type: "json" });
+       if (bookToDel && bookToDel.ref) {
+-          const statKey = "amb_stats:amb:" + bookToDel.ref.replace('amb:', '');
++          const statKey = "amb_stats:amb:" + bookToDel.ref.replace(/amb:/i, '');
+           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+           stats.purchases++;
+           await BOOKS_KV.put(statKey, JSON.stringify(stats));
+@@ -684,7 +684,7 @@
+
+       // Track referral listing if ref exists
+       if (body.ref) {
+-          const statKey = "amb_stats:amb:" + body.ref.replace('amb:', '');
++          const statKey = "amb_stats:amb:" + body.ref.replace(/amb:/i, '');
+           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+           stats.listings++;
+           await BOOKS_KV.put(statKey, JSON.stringify(stats));
