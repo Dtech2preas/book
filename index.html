@@ -1551,7 +1551,7 @@
         const refParam = params.get('ref');
 
         if (refParam) {
-            const cleanRef = refParam.toUpperCase().replace('AMB:', '');
+            const cleanRef = refParam.toUpperCase().replace(/^AMB:/i, '');
             // Check if it's already recorded
             const existingRef = localStorage.getItem('dtech_ref');
             if (existingRef !== cleanRef) {
@@ -1561,6 +1561,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ref: cleanRef, event: 'install' })
+                }).catch(e => console.error("Tracking error", e));
+            } else {
+                // Subsequent launches with same ref - track view silently
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: cleanRef, event: 'view' })
                 }).catch(e => console.error("Tracking error", e));
             }
             // Mark first launch as complete if they came via link
@@ -1584,7 +1591,7 @@
     function saveReferral() {
         const refInput = document.getElementById('manual-ref').value.trim();
         if (refInput) {
-            const shortCode = refInput.toUpperCase().replace('AMB:', '');
+            const shortCode = refInput.toUpperCase().replace(/^AMB:/i, '');
             localStorage.setItem('dtech_ref', shortCode);
             // Track install
             fetch(WORKER_URL + 'track', {

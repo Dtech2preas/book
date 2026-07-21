@@ -297,15 +297,6 @@ async function handleRequest(request, event) {
 
       await BOOKS_KV.put("system:daily_stats", JSON.stringify(dailyStats));
 
-      // Track ambassador purchase
-      const bookToDel = await BOOKS_KV.get(id, { type: "json" });
-      if (bookToDel && bookToDel.ref) {
-          const statKey = "amb_stats:amb:" + bookToDel.ref.replace(/amb:/i, '');
-          let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
-          stats.purchases++;
-          await BOOKS_KV.put(statKey, JSON.stringify(stats));
-      }
-
         }
 
         return new Response(JSON.stringify({
@@ -432,7 +423,7 @@ async function handleRequest(request, event) {
              // Update external API asynchronously instead of KV to save write requests
              if (trackEvent === 'install' || trackEvent === 'view') {
                  event.waitUntil(
-                     fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_${trackEvent}s/up`)
+                     fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_${trackEvent}s/up/`)
                      .catch(e => console.error("External counter failed", e))
                  );
              }
@@ -794,6 +785,15 @@ async function handleRequest(request, event) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
       }
 
+      // Track ambassador purchase
+      const bookToDel = await BOOKS_KV.get(id, { type: "json" });
+      if (bookToDel && bookToDel.ref) {
+          const statKey = "amb_stats:amb:" + bookToDel.ref.replace(/amb:/i, '');
+          let ambStats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
+          ambStats.purchases++;
+          await BOOKS_KV.put(statKey, JSON.stringify(ambStats));
+      }
+
       await BOOKS_KV.delete(id);
 
       // Increment Sold Count
@@ -935,7 +935,8 @@ async function handleRequest(request, event) {
         campuses: body.campuses !== undefined ? body.campuses : (existing.campuses || []),
         image: body.image || existing.image || "",
         createdAt: existing.createdAt,
-        sellerCode: code
+        sellerCode: code,
+        ref: existing.ref
       };
 
       await BOOKS_KV.put(id, JSON.stringify(bookData));
