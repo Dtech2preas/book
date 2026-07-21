@@ -296,7 +296,7 @@ async function handleRequest(request, event) {
       // Track ambassador purchase
       const bookToDel = await BOOKS_KV.get(id, { type: "json" });
       if (bookToDel && bookToDel.ref) {
-          const statKey = "amb_stats:" + bookToDel.ref;
+          const statKey = "amb_stats:amb:" + bookToDel.ref.replace('amb:', '');
           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
           stats.purchases++;
           await BOOKS_KV.put(statKey, JSON.stringify(stats));
@@ -357,7 +357,9 @@ async function handleRequest(request, event) {
             return new Response(JSON.stringify({ error: "Invalid or expired approval key" }), { status: 400, headers });
         }
 
-        const ambassadorId = "amb:" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
+        // Generate a 6-character uppercase alphanumeric code
+        const shortCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const ambassadorId = "amb:" + shortCode;
         const ambassadorData = {
             id: ambassadorId,
             name,
@@ -421,7 +423,7 @@ async function handleRequest(request, event) {
           const body = await request.json();
           const { ref, event } = body; // event: 'install', 'view'
           if (ref && event) {
-             const statKey = "amb_stats:" + ref;
+             const statKey = "amb_stats:amb:" + ref.replace('amb:', '');
              let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
              if (event === 'install') stats.installs++;
              if (event === 'view') stats.views++;
@@ -677,7 +679,7 @@ async function handleRequest(request, event) {
 
       // Track referral listing if ref exists
       if (body.ref) {
-          const statKey = "amb_stats:" + body.ref;
+          const statKey = "amb_stats:amb:" + body.ref.replace('amb:', '');
           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
           stats.listings++;
           await BOOKS_KV.put(statKey, JSON.stringify(stats));

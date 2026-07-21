@@ -207,7 +207,7 @@
     <div id="dashboard-section" style="display:none;">
         <div class="dashboard-header">
             <h1>Welcome, <span id="dash-name" style="background:transparent; padding:0; color:var(--primary-color);"></span></h1>
-            <span id="dash-id"></span>
+            <span id="dash-id" style="font-size: 1.2rem; font-weight: bold; background: var(--primary-color); color: #000; padding: 10px 20px; border-radius: 5px;"></span>
         </div>
 
         <div class="action-card">
@@ -352,9 +352,13 @@
         document.getElementById('logout-btn').style.display = 'block';
 
         document.getElementById('dash-name').textContent = ambassadorData.name;
-        document.getElementById('dash-id').textContent = 'ID: ' + ambassadorData.id;
 
-        const refUrl = window.location.origin + '/?ref=' + ambassadorData.id;
+        // Extract just the shortcode (e.g., 'X9B2K1' from 'amb:X9B2K1')
+        const shortCode = ambassadorData.id.replace('amb:', '');
+        document.getElementById('dash-id').textContent = 'Referral Code: ' + shortCode;
+
+        // The URL can use the shortCode as well to look cleaner
+        const refUrl = window.location.origin + '/?ref=' + shortCode;
         document.getElementById('ref-link').value = refUrl;
     }
 
@@ -396,7 +400,8 @@
 
     function triggerNativeShare() {
         if (window.AndroidApp && typeof window.AndroidApp.startOfflineShare === 'function') {
-            window.AndroidApp.startOfflineShare(ambassadorData.id);
+            const shortCode = ambassadorData.id.replace('amb:', '');
+            window.AndroidApp.startOfflineShare(shortCode);
         } else {
             alert("QR Sharing is only available within the D-TECH Ambassador Android App. For now, use your referral link below.");
         }
