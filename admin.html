@@ -9,7 +9,7 @@
         async function loadAmbassadors() {
             try {
                 const res = await fetch(workerUrl + 'admin/ambassadors', {
-                    headers: { 'X-Admin-Password': currentPassword }
+                    headers: { 'X-Admin-Password': adminPass }
                 });
 
                 if (res.ok) {
@@ -53,7 +53,7 @@
             try {
                 const res = await fetch(workerUrl + 'admin/ambassador/keys', {
                     method: 'POST',
-                    headers: { 'X-Admin-Password': currentPassword }
+                    headers: { 'X-Admin-Password': adminPass }
                 });
                 if (res.ok) {
                     const data = await res.json();
