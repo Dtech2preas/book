@@ -71,7 +71,9 @@ async function handleRequest(request, event) {
           const token = authHeader.split(" ")[1];
           let ambId;
           try {
-              ambId = atob(token).split(":")[0];
+              const decoded = atob(token);
+              const lastColonIndex = decoded.lastIndexOf(":");
+              ambId = decoded.substring(0, lastColonIndex);
           } catch(e) {
               return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers });
           }
