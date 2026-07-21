@@ -1551,16 +1551,15 @@
         const refParam = params.get('ref');
 
         if (refParam) {
-            const cleanRef = refParam.toUpperCase().replace('AMB:', '');
             // Check if it's already recorded
             const existingRef = localStorage.getItem('dtech_ref');
-            if (existingRef !== cleanRef) {
-                localStorage.setItem('dtech_ref', cleanRef);
+            if (existingRef !== refParam.toUpperCase()) {
+                localStorage.setItem('dtech_ref', refParam.toUpperCase());
                 // Track install via URL silently
                 fetch(WORKER_URL + 'track', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ref: cleanRef, event: 'install' })
+                    body: JSON.stringify({ ref: refParam.toUpperCase(), event: 'install' })
                 }).catch(e => console.error("Tracking error", e));
             }
             // Mark first launch as complete if they came via link

@@ -373,6 +373,19 @@
                 document.getElementById('stat-views').textContent = data.stats.views || 0;
                 document.getElementById('stat-listings').textContent = data.stats.listings || 0;
                 document.getElementById('stat-sales').textContent = data.stats.purchases || 0;
+
+                // Fetch external stats directly to avoid backend subrequest limits
+                if (ambassadorData && ambassadorData.id) {
+                    const shortCode = ambassadorData.id.replace(/amb:/i, '');
+                    fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_installs`)
+                        .then(r => r.json())
+                        .then(d => { if(d.count !== undefined) document.getElementById('stat-installs').textContent = d.count; })
+                        .catch(()=>{});
+                    fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_views`)
+                        .then(r => r.json())
+                        .then(d => { if(d.count !== undefined) document.getElementById('stat-views').textContent = d.count; })
+                        .catch(()=>{});
+                }
             } else if (res.status === 401) {
                 logout();
             }

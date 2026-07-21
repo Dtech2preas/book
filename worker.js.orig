@@ -50,7 +50,6 @@ async function handleRequest(request, event) {
             if (val) {
                 const statKey = "amb_stats:" + val.id;
                 const stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
-
                 const { password: _, ...safeData } = val;
                 ambassadors.push({ ...safeData, stats });
             }
@@ -72,16 +71,13 @@ async function handleRequest(request, event) {
           const token = authHeader.split(" ")[1];
           let ambId;
           try {
-              const decoded = atob(token);
-              const lastColonIndex = decoded.lastIndexOf(":");
-              ambId = decoded.substring(0, lastColonIndex);
+              ambId = atob(token).split(":")[0];
           } catch(e) {
               return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers });
           }
 
           const statKey = "amb_stats:" + ambId;
           const stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
-
           return new Response(JSON.stringify({ success: true, stats }), { headers });
       }
 
@@ -300,7 +296,7 @@ async function handleRequest(request, event) {
       // Track ambassador purchase
       const bookToDel = await BOOKS_KV.get(id, { type: "json" });
       if (bookToDel && bookToDel.ref) {
-          const statKey = "amb_stats:amb:" + bookToDel.ref.replace(/amb:/i, '');
+          const statKey = "amb_stats:amb:" + bookToDel.ref.replace('amb:', '');
           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
           stats.purchases++;
           await BOOKS_KV.put(statKey, JSON.stringify(stats));
@@ -425,14 +421,14 @@ async function handleRequest(request, event) {
       // --- Track Events ---
       if (url.pathname === '/track') {
           const body = await request.json();
-          const { ref, event: trackEvent } = body; // event: 'install', 'view'
-          if (ref && trackEvent) {
+          const { ref, event } = body; // event: 'install', 'view'
+          if (ref && event) {
              const shortCode = ref.replace(/amb:/i, '');
              const statKey = "amb_stats:amb:" + shortCode;
              // Update external API asynchronously instead of KV to save write requests
-             if (trackEvent === 'install' || trackEvent === 'view') {
+             if (event === 'install' || event === 'view') {
                  event.waitUntil(
-                     fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_${trackEvent}s/up`)
+                     fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_${event}s/up`)
                      .catch(e => console.error("External counter failed", e))
                  );
              }
@@ -687,7 +683,7 @@ async function handleRequest(request, event) {
 
       // Track referral listing if ref exists
       if (body.ref) {
-          const statKey = "amb_stats:amb:" + body.ref.replace(/amb:/i, '');
+          const statKey = "amb_stats:amb:" + body.ref.replace('amb:', '');
           let stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
           stats.listings++;
           await BOOKS_KV.put(statKey, JSON.stringify(stats));

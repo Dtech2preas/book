@@ -33,12 +33,35 @@
                             tr.innerHTML = `
                                 <td>${amb.name}</td>
                                 <td>${amb.email}</td>
-                                <td>${amb.stats.installs || 0}</td>
-                                <td>${amb.stats.views || 0}</td>
+                                <td class="amb-installs" data-id="${amb.id}">${amb.stats.installs || 0}</td>
+                                <td class="amb-views" data-id="${amb.id}">${amb.stats.views || 0}</td>
                                 <td>${amb.stats.listings || 0}</td>
                                 <td>${amb.stats.purchases || 0}</td>
                             `;
                             tbody.appendChild(tr);
+                        });
+
+                        // Async fetch for counterAPI to avoid backend N+1 blocking
+                        data.ambassadors.forEach(amb => {
+                            if (!amb.id) return;
+                            const shortCode = amb.id.replace(/amb:/i, '');
+                            fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_installs`)
+                                .then(res => res.json())
+                                .then(resData => {
+                                    if(resData.count !== undefined) {
+                                        const el = document.querySelector(`.amb-installs[data-id="${amb.id}"]`);
+                                        if(el) el.textContent = resData.count;
+                                    }
+                                }).catch(()=>{});
+
+                            fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_views`)
+                                .then(res => res.json())
+                                .then(resData => {
+                                    if(resData.count !== undefined) {
+                                        const el = document.querySelector(`.amb-views[data-id="${amb.id}"]`);
+                                        if(el) el.textContent = resData.count;
+                                    }
+                                }).catch(()=>{});
                         });
                     } else {
                         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No ambassadors registered yet.</td></tr>';

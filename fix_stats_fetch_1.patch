@@ -1,0 +1,30 @@
+--- worker.js
++++ worker.js
+@@ -48,11 +48,27 @@
+         for (const key of list.keys) {
+             const val = await BOOKS_KV.get(key.name, { type: "json" });
+             if (val) {
+                 const statKey = "amb_stats:" + val.id;
+                 const stats = await BOOKS_KV.get(statKey, { type: "json" }) || { installs: 0, views: 0, listings: 0, purchases: 0 };
++
++                // Fetch external stats from CounterAPI
++                const shortCode = val.id.replace(/amb:/i, '');
++                try {
++                    const installsRes = await fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_installs`);
++                    if (installsRes.ok) {
++                        const installsData = await installsRes.json();
++                        stats.installs = installsData.count || 0;
++                    }
++                    const viewsRes = await fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_views`);
++                    if (viewsRes.ok) {
++                        const viewsData = await viewsRes.json();
++                        stats.views = viewsData.count || 0;
++                    }
++                } catch (e) {
++                    // Silent fail, keep KV stats
++                }
++
+                 const { password: _, ...safeData } = val;
+                 ambassadors.push({ ...safeData, stats });
+             }
+         }
