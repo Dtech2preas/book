@@ -1545,10 +1545,69 @@
             .replace(/'/g, "&#039;");
     }
 
+    function handleFirstLaunchAndRef() {
+        // Handle ?ref=... parameter from URL silently
+        const params = new URLSearchParams(window.location.search);
+        const refParam = params.get('ref');
+
+        if (refParam) {
+            // Check if it's already recorded
+            const existingRef = localStorage.getItem('dtech_ref');
+            if (existingRef !== refParam.toUpperCase()) {
+                localStorage.setItem('dtech_ref', refParam.toUpperCase());
+                // Track install via URL silently
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: refParam.toUpperCase(), event: 'install' })
+                }).catch(e => console.error("Tracking error", e));
+            }
+            // Mark first launch as complete if they came via link
+            localStorage.setItem('dtech_first_launch_done', 'true');
+        } else if (!localStorage.getItem('dtech_first_launch_done')) {
+            // No link, first time opening app/site - show welcome modal
+            document.getElementById('welcome-modal').style.display = 'block';
+        } else {
+            // Subsequent launches - track view if we have a ref
+            const savedRef = localStorage.getItem('dtech_ref');
+            if (savedRef) {
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: savedRef, event: 'view' })
+                }).catch(e => console.error("Tracking error", e));
+            }
+        }
+    }
+
+    function saveReferral() {
+        const refInput = document.getElementById('manual-ref').value.trim();
+        if (refInput) {
+            const shortCode = refInput.toUpperCase().replace('AMB:', '');
+            localStorage.setItem('dtech_ref', shortCode);
+            // Track install
+            fetch(WORKER_URL + 'track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref: shortCode, event: 'install' })
+            }).catch(e => console.error("Tracking error", e));
+        }
+        localStorage.setItem('dtech_first_launch_done', 'true');
+        document.getElementById('welcome-modal').style.display = 'none';
+        showToast('Welcome to D-TECH!');
+    }
+
+    function skipReferral() {
+        localStorage.setItem('dtech_first_launch_done', 'true');
+        document.getElementById('welcome-modal').style.display = 'none';
+        showToast('Welcome to D-TECH!');
+    }
+
     window.appConfigPromise.then(config => {
         WORKER_URL = config.workerUrl;
         if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
         fetchBooks();
+        handleFirstLaunchAndRef();
     });
 
     window.addEventListener('pageshow', (event) => {
