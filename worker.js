@@ -12,7 +12,7 @@ async function handleRequest(request, event) {
       headers: {
         "Access-Control-Allow-Origin": "*", // Allow any origin
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, X-Admin-Password, X-Seller-Code",
+        "Access-Control-Allow-Headers": "Content-Type, X-Admin-Password, X-Seller-Code, Authorization",
       },
     });
   }
@@ -20,6 +20,7 @@ async function handleRequest(request, event) {
   // Set default headers
   const headers = {
     "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Password, X-Seller-Code, Authorization",
     "Content-Type": "application/json",
   };
 
