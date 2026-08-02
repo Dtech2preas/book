@@ -1,4 +1,4 @@
-# DTECH Student Marketplace - Full System Analysis
+# DTECH Student Marketplace - Full System Architecture & Documentation
 
 ## 1. Overview and Purpose
 **What it is:**
@@ -8,104 +8,107 @@ The DTECH Student Marketplace (also known as DTECH Book Exchange) is a peer-to-p
 The project is run by Seakwa Jonas Mochebane (online alias: PREASX24), a South African technology founder, as part of the broader DTECH ecosystem.
 
 **What it's for:**
-Instead of students relying on scattered group chats or social media to find or sell textbooks, this application provides a centralized and clean UI to bridge the gap. It connects buyers directly with sellers or requesters over WhatsApp, making it easy to facilitate textbook exchange.
+Instead of students relying on scattered group chats or social media to find or sell textbooks, this application provides a centralized and clean UI to bridge the gap. It connects buyers directly with sellers or requesters over WhatsApp, making it easy to facilitate textbook exchanges without handling financial transactions directly on the platform.
 
-## 2. How the System Works (High-Level Architecture)
+## 2. High-Level Architecture
+The system is a fully serverless web application and native Android ecosystem that utilizes a separated Frontend and Backend architecture:
 
-The system is a fully serverless web application that utilizes a separated Frontend and Backend architecture:
-
-* **Frontend:** A series of static HTML, CSS, and JS files (`index.html`, `admin.html`, `seller-manage.html`, etc.) served directly to the user's browser. It uses plain Vanilla JavaScript to make HTTP requests (fetch) to the backend API and handles client-side caching using IndexedDB for offline resilience. The UI theme follows a "DTech Blue & Black" branding, using a dark mode aesthetic with `#00D2FF` cyan accents.
-* **Backend:** A single, robust Cloudflare Worker (`worker.js`) script handles all routing, logic, and authentication.
-* **Database:** The backend utilizes Cloudflare KV (Key-Value) storage to persist all data. Everything is stored as JSON objects.
-* **Image Hosting:** Images are converted to Base64 strings and stored directly within the KV store's JSON objects. To prevent massive payloads when listing many books, the API dynamically strips out the base64 image data from the general `GET /` list endpoint. Images are loaded lazily on demand via a dedicated `GET /image?id=...` endpoint that returns binary image data.
+* **Frontend (Web):** A series of static HTML, CSS, and JS files (`index.html`, `admin.html`, `seller-manage.html`, `sell.html`, `request.html`, `ambassadors.html`) served directly to the user's browser. It uses plain Vanilla JavaScript to make HTTP requests to the backend API and handles client-side caching using IndexedDB for offline resilience. The UI theme follows a "DTech Blue & Black" branding, using a dark mode aesthetic with `#00D2FF` cyan accents. Frontend configuration is accessed asynchronously by awaiting `window.appConfigPromise` in `config.js` to prevent race conditions.
+* **Backend (API):** A robust Cloudflare Worker (`worker.js`) script handles all routing, logic, authentication, text extraction (OCR), and push notifications.
+* **Database:** Cloudflare KV (Key-Value) storage persists all data natively as JSON objects.
+* **Image Hosting:** Images are converted to Base64 strings and stored directly within the KV store's JSON objects. To optimize initial load times, the `GET /` list endpoint dynamically strips out the base64 image data. Images are loaded lazily on demand via a dedicated `GET /image?id=...` endpoint that returns binary image data.
+* **Android Native Wrappers:** Built using Gradle, providing native experiences and push notifications for admins, ambassadors, and general users.
+* **CI/CD pipeline:** Managed via GitHub Actions to automate Cloudflare Worker deployments and Android APK builds.
 
 ## 3. The Backend API (`worker.js`)
-The `worker.js` script handles cross-origin requests (CORS) from the frontend and routes operations based on the HTTP method and URL path.
+The `worker.js` script handles cross-origin requests (CORS), ensuring `Authorization` is explicitly included in the `Access-Control-Allow-Headers` for both preflight and regular requests. It routes operations based on the HTTP method and URL path. Admin endpoints require the `X-Admin-Password` header, mapped globally in the frontend as `adminPass`.
 
-### Endpoints and Logic:
-* **`OPTIONS *`**:
-  - Handles CORS preflight requests.
-* **`GET /`**:
-  - Fetches a list of all active books from the KV store (keys prefixed with `book:`).
-  - Returns a lightweight array of book JSON objects (strips out `image` and `sellerCode` for speed and privacy).
-* **`GET /?id=<book_id>`**:
-  - Fetches the full, unredacted JSON object for a specific book. This includes the massive base64 image string. Used primarily by the admin panel when editing an existing book.
-* **`GET /image?id=<book_id>`**:
-  - Fetches a book's JSON object, extracts the base64 string, decodes it into a binary `Uint8Array`, and serves it back with proper image MIME types and a 1-year cache control header. This acts as a pseudo-CDN for images.
-* **`GET /stats`**:
-  - Calculates and returns site statistics for the frontend Stats Modal.
-  - Counts all `book:` keys (Books Listed).
-  - Counts the number of active sellers in `system:sellers`.
-  - Retrieves total historically sold count from `system:stats`.
-* **`GET /sellers`**:
-  - **Auth Required:** `X-Admin-Password` header must be provided.
-  - Returns the `system:sellers` map containing seller contact numbers, display names, 4-letter access codes, and total listings count.
-* **`POST /seller/login`**:
-  - Expects a 4-letter `code` in the JSON body.
-  - Iterates through all books in the KV store to find those where `sellerCode` matches the provided code. Returns the matching list of books. Used by sellers to manage their own items.
-* **`POST /admin/migrate`**:
-  - **Auth Required:** `X-Admin-Password` header must be provided.
-  - A maintenance endpoint that iterates through all existing books, groups them by contact phone number, and automatically generates/assigns a unique 4-letter code to each seller, saving it back to KV.
-* **`POST /`**:
-  - **Auth Required:** `X-Admin-Password` header must be provided.
-  - Adds a new book to the database. Generates a unique `book:<timestamp>-<random>` ID. Either looks up the existing seller's 4-letter code or generates a new one. Creates the new book JSON in KV.
-* **`PUT /?id=<book_id>`**:
-  - **Auth Required:** `X-Admin-Password` header must be provided.
-  - Updates an existing book. If the contact number is changed, it re-evaluates the `sellerCode` mapping.
-* **`DELETE /?id=<book_id>`**:
-  - **Auth Required:** Either `X-Admin-Password` (Admin) OR `X-Seller-Code` matching the book's owner code (Seller).
-  - Deletes the specific book from the KV store.
-  - Increments the `sold` tally counter inside `system:stats` so total historical sales are tracked even when the item is gone.
+### Key Endpoints and Logic:
+* **`OPTIONS *`**: Handles CORS preflight requests.
+* **`GET /`**: Fetches a list of all books from the KV store (`book:` prefix). Filters for `status: 'active'`, returning a lightweight array of book JSON objects (strips out `image` and `sellerCode` for speed and privacy).
+* **`GET /?id=<book_id>`**: Fetches the full, unredacted JSON object for a specific book, including the massive base64 image string. Used primarily by the admin panel when editing.
+* **`GET /image?id=<book_id>`**: Extracts a book's base64 string, decodes it into a binary `Uint8Array`, and serves it back with proper image MIME types and caching headers (pseudo-CDN).
+* **`GET /stats`**: Returns statistics (`booksListed`, `sellersCount`, `soldCount`, `activeCount`, `pendingCount`, `visitorsCount`). It backfills any discrepancy between global totals and daily aggregate sums into a fixed launch date entry ('2026-02-20') within `system:daily_stats` for accurate Chart.js visualizations. Asynchronously fetches visitor counts from the external counter API.
+* **`POST /`**: Public endpoint for user book uploads. New books default to `status: 'pending'` in KV and require admin approval. Generates a unique ID (`book:<timestamp>-<random>`). Creates or retrieves the seller's 4-digit code.
+* **`PUT /?id=<book_id>`**: (Admin Auth) Updates an existing book. Preserves the `ref` field in the payload to maintain ambassador attribution.
+* **`DELETE /?id=<book_id>`**: (Admin OR Seller Auth) Deletes a book. If sold, checks the `ref` field and tracks conversion in Cloudflare KV. Increments the `soldCount` in `system:stats`.
+* **`PUT /admin/approve`**: (Admin Auth) Changes a book's status from `pending` to `active`.
+* **`GET /sellers`**: (Admin Auth) Returns the `system:sellers` map containing seller contact numbers, names, 4-digit codes, and listings count.
+* **`POST /seller/login`**: Authenticates a seller using a 4-digit code.
+* **`DELETE /seller/account`**: (Seller Auth) Permanently deletes a seller account and all their associated data using the `X-Seller-Code`.
+* **`POST /extract-text`**: Performs book cover text extraction (OCR) via the Groq API (`llama-3.2-90b-vision-preview`), extracting title, author, editors, and version. Handles rate limiting by rotating through multiple API keys stored as newline-separated values in the `GROQ_TOKENS` secret.
+* **`POST /admin/register-fcm-token`**: Registers admin device FCM tokens to KV (`system:fcm_tokens`).
+* **`POST /report` & `GET /admin/reports`**: Creates and retrieves user reports on listings, prefixed with `report:` in KV.
 
-## 4. File Breakdown
+### Push Notifications (FCM):
+The Worker uses the native Web Crypto API (avoiding Node.js dependencies) to generate JWTs from the `FCM_SERVICE_ACCOUNT_JSON` environment variable and send push notifications to admins via the FCM HTTP v1 API for new uploads and reports.
 
-### `index.html` (The Main User View)
+### External Integrations:
+* **api.counterapi.dev**: An external free API used for high-frequency stats tracking (like visitor counts, ambassador views, and installs) to reduce KV write operations. Fetches must include a trailing slash (e.g., `..._installs/`) to prevent CORS-breaking 301 redirects. Returning a 400 Bad Request when records don't exist is an expected behavior.
+
+## 4. Frontend File Breakdown
+
+### `index.html` (Home - The Main User View)
 * **Purpose:** The core marketplace where students browse textbooks.
 * **Features:**
-  - Displays a compact header with a logo and navigation.
-  - A tabbed switcher allows users to toggle between "Buy Books" (items for sale) and "Looking For Books" (requested items).
-  - A robust search bar filtering logic (by title, author, or seller) and sorting dropdown (Newest, A-Z, Z-A).
-  - Fetches data from `worker.js` and implements a "network-first, fallback to cache" strategy using IndexedDB (`BooksDB`). If the user goes offline, it still shows previously cached books.
-  - Books are displayed in a responsive CSS Grid. The UI shows a "NEW" badge on books uploaded within the last 7 days.
-  - Clicking a book opens an enhanced Modal displaying full details, fallback logic for missing cover images, and a button to initiate a WhatsApp chat directly with the buyer/seller pre-filled with context about the specific book.
-  - Incorporates a Stats Modal that displays animated numerical counters for Listed Books, Active Sellers, Books Sold, and overall Site Visitors (fetched from a secondary counter worker).
-  - Implements deep-linking via the `?book=<id>` URL parameter so users can share links to specific books.
+  * Tabbed switcher to toggle between "Buy Books" (Selling) and "Looking For Books" (Requested items).
+  * Implements search filtering and sorting. Uses IndexedDB (`BooksDB`) for offline caching.
+  * Books are displayed in a responsive CSS Grid with dynamic badges ("NEW", "LOOKING FOR"). Missing images trigger a fallback `onerror` placeholder.
+  * Clicking a book opens a detailed Modal to initiate a WhatsApp chat directly with the buyer/seller pre-filled with context.
+  * **First Launch Welcome Modal:** Prompts new users to enter/scan an ambassador referral code (persisted in `localStorage` as `dtech_ref`).
+  * **Stats Modal:** Displays animated numerical counters (using `requestAnimationFrame` via `animateValue()`) for Listed Books, Active Sellers, Books Sold, and Site Visitors ("Since 20 Feb 2026").
+  * **Report Listing:** Allows users to flag books. Identifies the target via a global `currentReportBookId` set during `openModal()`.
 
-### `admin.html` (The Admin Portal)
-* **Purpose:** Used strictly by site operators to manage the entire marketplace.
+### `admin.html` (The Admin Dashboard)
+* **Purpose:** A secure portal for site operators.
 * **Features:**
-  - Requires the admin password for any destructive or write actions. The password is automatically persisted locally in `localStorage` for 3 days to improve admin UX.
-  - Contains a heavy form to create new listings. It handles both "Selling" and "Looking For" types, adjusting required fields dynamically (e.g. author and image are optional for "Looking For").
-  - Integrates `Cropper.js` so admins can immediately crop and format images before they are converted into a Base64 string and pushed to the backend.
-  - Has a Seller Management section to manually view, refresh, or migrate all sellers and their 4-letter access codes.
-  - Displays a list of all current books, giving the admin buttons to "Edit" or "Delete" any entry.
+  * 3-tab layout: **Stats Dashboard** (renders interactive data visualizations via Chart.js CDN powered by `system:daily_stats`), **Pending Approvals** queue, and **Inventory Management**.
+  * Uses `localStorage` to persist the `X-Admin-Password`.
+  * Integrates `Cropper.js` for image cropping prior to Base64 conversion.
+  * Manages user reports (dismissing/viewing).
 
 ### `seller-manage.html` (The Seller Portal)
-* **Purpose:** Allows standard users (sellers) who have listed books to manage their own specific listings without needing admin access.
+* **Purpose:** Standard users manage their listings via a 4-digit token (`X-Seller-Code`).
 * **Features:**
-  - Provides a login interface where sellers input their unique 4-letter code (assigned when the admin creates their first listing).
-  - Authenticates via the `POST /seller/login` worker endpoint.
-  - If successful, stores the code in `sessionStorage` and displays only the books belonging to that specific seller.
-  - Sellers are strictly permitted to **Delete** their own listings (e.g., if a book was successfully sold). They cannot edit book details. Deletions use the `X-Seller-Code` header to prove authorization to the worker.
+  * Returning sellers initialize via `loadBooks(sellerCode)` (from sessionStorage).
+  * Can upload new books directly (automatically injects cached contact info).
+  * Includes a "User Manual" button explaining the code mechanism.
 
-### `services.html` (The "Add a Listing" Contact Page)
-* **Purpose:** Directs users on how to submit a book to the platform.
+### `sell.html` & `request.html` (Listing Forms)
+* **Purpose:** Public forms to upload a textbook to sell or request a textbook. Replaces the legacy `services.html` page.
 * **Features:**
-  - Standard users cannot upload directly to the database. Instead, this page gives them instructions on the required info (Name, Price, Phone Number, Picture).
-  - Provides prominent "Start Selling on WhatsApp" or "Request a Book via WhatsApp" buttons. These buttons use `wa.me` links to pre-fill a WhatsApp message to the admin's phone number (`27686620552`), allowing the admin to vet the details and upload the book manually via `admin.html`.
+  * Strict POPIA and WhatsApp visibility checkboxes.
+  * Uses the backend Groq OCR (`/extract-text`) to automatically populate title/author from the uploaded cover image (with Tesseract.js available as a client-side library in the codebase).
+  * 'Looking For' books (`type: 'looking_for'`) don't strictly require images (using fallback).
+
+### `ambassadors.html` (Ambassador Dashboard)
+* **Purpose:** Dashboard for ambassadors to view their stats (referrals, views, conversions).
+* **Features:**
+  * Authenticates using a base64-encoded token `amb:CODE:TIMESTAMP`.
+  * Handles shortcodes by stripping the `amb:` prefix with a case-insensitive regex (`/^AMB:/i`).
+
+### `terms-modal.js`
+* **Purpose:** A mandatory Legal Framework and POPIA Privacy Policy modal enforced across the frontend. Tracks acceptance in `localStorage`.
 
 ### `about.html`
-* **Purpose:** The information page for the platform and its context within the DTECH ecosystem.
-* **Features:**
-  - Provides a textual overview explaining how the Book Exchange simplifies textbook acquisition for students.
-  - Contains an "Ecosystem Highlight" section outlining the founder, Seakwa Jonas Mochebane (PREASX24), and lists the other connected platforms like `preasx24.co.za` (past papers) and `apps.dtech-services.co.za`.
+* **Purpose:** The ecosystem highlight page explaining the platform and the founder, Jonas Mochebane.
 
-### `worker.js`
-* **Purpose:** As detailed above, the backend brains of the operation utilizing Cloudflare Workers. It handles all database I/O, security logic, ID generation, and seller-code mapping logic.
+## 5. Android Native Ecosystem (`app`, `admin-app`, `ambassador-app`)
+The repository includes native Android modules built with Gradle:
+* **`app`**: A native Android WebView wrapper for the main marketplace. Configured to support file uploads via `WebChromeClient.onShowFileChooser`.
+* **`admin-app` (com.dtech.books.admin)**: Loads the admin dashboard. Exposes the device's FCM token to the web frontend using a `WebAppInterface` to enable push notifications for new books/reports.
+* **`ambassador-app` (com.dtech.ambassador)**: Utilizes the ZXing library (`com.google.zxing:core`) to generate visual QR codes pointing to the public download URL of the app.
 
-### Other Assets
-* **`logo.png`**: The primary branding asset used in the header and Open Graph tags.
-* **`CNAME`**: Contains DNS records binding the custom domain (`books.dtech-services.co.za`) to the repository hosting (often used for GitHub Pages or Cloudflare Pages frontend deployments).
+## 6. CI/CD & Deployments (GitHub Actions)
+The platform uses automated GitHub workflows in `.github/workflows`:
+* **`deploy-worker.yml`**: Triggers on push to the `main` branch. Deploys `worker.js` to Cloudflare using `cloudflare/wrangler-action@v4` (`wranglerVersion: '4'`). It explicitly re-uploads the `FCM_SERVICE_ACCOUNT_JSON` secret to prevent overwriting, while relying on Cloudflare to persist `GROQ_TOKENS`.
+* **`build-apk.yml`**: Builds the Android debug APKs (`app`, `admin-app`, `ambassador-app`) using Java 17 and the Android SDK. It copies the main `app` APK to `marketplace.apk` at the repository root and automatically commits it back to the repo (requiring `permissions: contents: write`) so it can be served publicly via Cloudflare Pages.
 
----
-*Generated as a Full System Analysis to document architecture, file definitions, and backend methodologies for the DTECH ecosystem.*
+## 7. Storage Keys & Data Structures Reference
+* `book:<id>`: Core book listings.
+* `system:sellers`: Maps seller codes to contact details and listing counts.
+* `system:stats`: Global counter stats (e.g., total sold).
+* `system:daily_stats`: JSON map of `YYYY-MM-DD` to daily aggregates (`soldCount`, `sellersCount`, `visitorsCount`).
+* `system:fcm_tokens`: Registered push notification tokens for admin devices.
+* `report:<id>`: Flagged book reports.
+* `amb_stats:amb:<shortcode>`: Ambassador referral stats tracked natively in KV.
