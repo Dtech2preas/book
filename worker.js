@@ -40,7 +40,7 @@ async function handleRequest(request, event) {
       // --- Admin List Ambassadors ---
       if (url.pathname === '/admin/ambassadors') {
         const password = request.headers.get("X-Admin-Password");
-        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admin-secret-123')) {
+        if (password !== (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'dtech_x24-2020')) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
         }
 
