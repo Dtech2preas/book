@@ -3,3 +3,5 @@ app/build/
 local.properties
 /admin-app/build/
 ambassador-app/build/
+.wrangler/
+wrangler.log
