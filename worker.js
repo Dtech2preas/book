@@ -692,6 +692,15 @@ async function handleRequest(request, event) {
       // Send FCM Notification for new book
       event.waitUntil(sendFCMNotification( "New Book Upload", body.title + " requires approval."));
 
+      // Send Email Notification
+      event.waitUntil(fetch('https://formsubmit.co/dtech2j@gmail.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: "There's a website update on " + (request.headers.get('Origin') || 'the website')
+        })
+      }).catch(e => console.error('FormSubmit Error:', e)));
+
       return new Response(JSON.stringify({ success: true, id: id, message: "Book added successfully", code: code }), { headers });
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
