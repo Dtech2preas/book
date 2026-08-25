@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marketplace</title>
+    <script src="config.js"></script>
+    <meta name="description" content="Student-focused platform for buying and selling textbooks.">
+    <meta name="keywords" content="entrepreneurs, books, text books, market, student marketplace, PREASX24, Seakwa Jonas Mochebane">
+    <meta name="author" content="Seakwa Jonas Mochebane">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="/">
+    <meta property="og:title" content="Student Marketplace">
+    <meta property="og:description" content="Buy and sell textbooks easily. connect directly with student sellers.">
+    <meta property="og:image" content="">
+
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+
+<header>
+    <!-- TOP ROW: logo + text + seller icon -->
+    <div class="header-top">
+        <div class="header-logo-container">
+            <img src="" alt="Logo" class="header-logo brand-logo">
+            <h1 class="brand-name">Platform</h1>
+        </div>
+        <div class="header-right">
+            <span class="market-text brand-description">The Student Marketplace</span>
+            <a href="seller-manage.html" class="seller-link" title="Seller Management">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- MIDDLE ROW: counter + nav links (tight spacing) -->
+    <div class="header-middle">
+        <!-- Stats Button -->
+        <button id="stats-btn" class="stats-btn">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5h-2v12h2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+            </svg>
+            Stats
+        </button>
+
+        <div class="header-nav">
+            <a href="sell.html">Sell Your Books</a>
+
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="tabs-container">
+        <button id="tab-buy" class="tab-btn active">Buy Books</button>
+        <button id="tab-looking-for" class="tab-btn">Looking For Books</button>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search books by title, author, or seller...">
+        <select id="campus-select">
+            <option value="all">All Campuses</option>
+            <option value="South Campus">South Campus</option>
+            <option value="North Campus">North Campus</option>
+            <option value="Second Avenue Campus">Second Avenue Campus</option>
+            <option value="Missionvale Campus">Missionvale Campus</option>
+            <option value="Bird Street Campus">Bird Street Campus</option>
+            <option value="George Campus">George Campus</option>
+        </select>
+        <select id="sort-select">
+            <option value="newest">Newest First</option>
+            <option value="a-z">A-Z</option>
+            <option value="z-a">Z-A</option>
+        </select>
+    </div>
+
+    <div id="request-book-container">
+        <h3>Looking For Books <span class="info-icon" onclick="openLookingForInfoModal()">i</span></h3>
+        <p>Can't find the book you need? Let others know you're looking for it!</p>
+        <a href="request.html" class="contact-btn">
+            Add book to listing
+        </a>
+    </div>
+
+    <div id="books-container" class="books-grid">
+        <!-- Books will be injected here -->
+    </div>
+    <div id="loading-message" class="loading">Loading books...</div>
+    <div id="error-message" class="error"></div>
+</div>
+
+<!-- Enhanced Book Detail Modal -->
+<div id="bookDetailModal" class="modal">
+    <div class="book-detail-modal-content">
+        <span class="modal-close-btn" onclick="closeModal()">&times;</span>
+        <div class="modal-img-container">
+            <img id="modal-img" src="" alt="Book Cover">
+        </div>
+        <div class="modal-info">
+            <h2 id="modal-title" class="modal-title">Book Title</h2>
+            <div id="modal-author" class="modal-author">By Author Name</div>
+            <div id="modal-price" class="modal-price">R 0.00</div>
+
+            <div class="modal-meta">
+                <p><strong id="modal-seller-label">Seller:</strong> <span id="modal-seller">-</span></p>
+                <p><strong>Listed:</strong> <span id="modal-date">-</span></p>
+                <div id="modal-campus-container">
+                    <label for="modal-campus-select">Preferred Meeting Point:</label>
+                    <select id="modal-campus-select">
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <a id="modal-whatsapp-btn" href="#" target="_blank" class="action-btn btn-whatsapp">
+                    Contact Seller on WhatsApp
+                </a>
+                <button id="modal-share-btn" class="action-btn btn-share">
+                    Share Book Link
+                </button>
+                <button id="modal-report-btn" class="action-btn" onclick="openReportModal()">
+                    Report Listing
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeReportModal()">&times;</span>
+        <h2>Report Listing</h2>
+        <form id="report-form">
+            <div>
+                <label>Your Name</label>
+                <input type="text" id="report-name" required>
+            </div>
+            <div>
+                <label>Your WhatsApp Number</label>
+                <input type="text" id="report-phone" required>
+            </div>
+            <div>
+                <label>Reason for Reporting</label>
+                <select id="report-reason" required>
+                    <option value="">Select a reason...</option>
+                    <option value="Spam / Fake Listing">Spam / Fake Listing</option>
+                    <option value="Not a Textbook">Not a Textbook</option>
+                    <option value="Scam / Fraud">Scam / Fraud</option>
+                    <option value="Inappropriate Content">Inappropriate Content</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <button type="submit" id="report-submit-btn">Submit Report</button>
+        </form>
+    </div>
+</div>
+
+<!-- Components -->
+<div id="toast-container" class="toast-container"></div>
+<button id="back-to-top" title="Back to Top">↑</button>
+
+<!-- Looking For Info Modal -->
+<div id="lookingForInfoModal" class="modal">
+    <div class="stats-modal-content">
+        <span class="close" onclick="closeLookingForInfoModal()">&times;</span>
+        <h3>About "Looking For Books"</h3>
+        <p>
+            This section is for when the book you're looking for doesn't exist in the "Buy Books" section.
+            <br><br>
+            You can put the book details here, and whoever has that book will come contact you.
+            <br><br>
+            <strong>For those who have books:</strong> Please go through the listings to see if anyone is looking for any old books you might have!
+        </p>
+        <div>
+            <a href="request.html" class="contact-btn">Add book to listing</a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Modal -->
+<div id="statsModal" class="modal">
+    <div class="stats-modal-content">
+        <span class="close" onclick="closeStatsModal()">&times;</span>
+        <h2>Marketplace Stats</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="stat-listed">-</div>
+                <div class="stat-label">Books Listed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="stat-sellers">-</div>
+                <div class="stat-label">Active Sellers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="stat-sold">-</div>
+                <div class="stat-label">Books Sold</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="stat-visitors">-</div>
+                <div class="stat-label">Visitors</div>
+                <div>Since 20 Feb 2026</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer-text">
+    <div>
+        <a href="javascript:void(0)" onclick="openTermsModal()">Terms of Use & Privacy Policy</a>
+    </div>
+</footer>
+
+<!-- Stats and Visitor Script -->
+<script>
+(function() {
+  // Animation Helper
+  function animateValue(obj, start, end, duration) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          obj.innerText = Math.floor(progress * (end - start) + start);
+          if (progress < 1) {
+              window.requestAnimationFrame(step);
+          } else {
+              obj.innerText = end; // Ensure final value is exact
+          }
+      };
+      window.requestAnimationFrame(step);
+  }
+
+  // Visitor Counter
+  let visitorCount = 0;
+  const COUNTER_URL = 'https://late-salad-779e.lefa4082.workers.dev/';
+  const currentUrl = window.location.hostname;
+  fetch(`${COUNTER_URL}?url=${encodeURIComponent(currentUrl)}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(data => {
+      // Store visitor count
+      visitorCount = parseInt(data.site_views) || 0;
+      // If modal is already open (rare on load), update it
+      const visitorEl = document.getElementById('stat-visitors');
+      if (visitorEl && visitorEl.offsetParent !== null) {
+          animateValue(visitorEl, 0, visitorCount, 2000);
+      } else if (visitorEl) {
+          // Just set it initially so it's not empty if animation fails
+          visitorEl.innerText = visitorCount;
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching view counts:', error);
+    });
+
+  // Stats Logic
+  const statsModal = document.getElementById('statsModal');
+  const statsBtn = document.getElementById('stats-btn');
+
+  window.closeStatsModal = function() {
+      statsModal.style.display = "none";
+  };
+
+  if(statsBtn) {
+      statsBtn.onclick = function() {
+          statsModal.style.display = "block";
+          // Trigger animations
+          fetchStats();
+          const visitorEl = document.getElementById('stat-visitors');
+          if(visitorEl) animateValue(visitorEl, 0, visitorCount, 2000);
+      }
+  }
+
+  // Close stats modal when clicking outside
+  window.addEventListener('click', function(event) {
+      if (event.target == statsModal) {
+          statsModal.style.display = "none";
+      }
+  });
+
+  async function fetchStats() {
+      try {
+          // Wait for config to load
+          const config = await window.appConfigPromise;
+          const MAIN_WORKER_URL = config.workerUrl.replace(/\/$/, "");
+
+          // Reset values to 0 before animating? Or animate from 0.
+          document.getElementById('stat-listed').innerText = '0';
+          document.getElementById('stat-sellers').innerText = '0';
+          document.getElementById('stat-sold').innerText = '0';
+
+          const response = await fetch(`${MAIN_WORKER_URL}/stats`);
+          if (!response.ok) throw new Error("Failed to fetch stats");
+          const data = await response.json();
+
+          const listedEl = document.getElementById('stat-listed');
+          const sellersEl = document.getElementById('stat-sellers');
+          const soldEl = document.getElementById('stat-sold');
+
+          if(listedEl) animateValue(listedEl, 0, data.booksListed || 0, 2000);
+          if(sellersEl) animateValue(sellersEl, 0, data.sellersCount || 0, 2000);
+          if(soldEl) animateValue(soldEl, 0, data.sold || 0, 2000);
+
+      } catch (err) {
+          console.error(err);
+      }
+  }
+})();
+</script>
+
+<!-- Your main script (unchanged) -->
+<script>
+    let WORKER_URL = '';
+    let allBooks = [];
+    let currentTab = 'buy'; // 'buy' or 'looking_for'
+
+    const DB_NAME = 'BooksDB';
+    const STORE_NAME = 'books';
+    const DB_VERSION = 1;
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    async function saveBooksToDB(books) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            store.clear();
+            books.forEach(book => store.put(book));
+            tx.oncomplete = () => resolve();
+            tx.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    async function getBooksFromDB() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    const container = document.getElementById('books-container');
+    const loadingMsg = document.getElementById('loading-message');
+    const errorMsg = document.getElementById('error-message');
+    const searchInput = document.getElementById('search-input');
+
+    // New Modal Elements
+    const modal = document.getElementById("bookDetailModal");
+    const modalImg = document.getElementById("modal-img");
+    const modalTitle = document.getElementById("modal-title");
+    const modalAuthor = document.getElementById("modal-author");
+    const modalPrice = document.getElementById("modal-price");
+    const modalSeller = document.getElementById("modal-seller");
+    const modalDate = document.getElementById("modal-date");
+    const modalWhatsappBtn = document.getElementById("modal-whatsapp-btn");
+    const modalShareBtn = document.getElementById("modal-share-btn");
+
+    const modalSellerLabel = document.getElementById("modal-seller-label");
+
+    // Toast & BackToTop
+    const toastContainer = document.getElementById('toast-container');
+    const backToTopBtn = document.getElementById('back-to-top');
+
+    // Back to Top Logic
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.style.display = 'flex';
+        } else {
+            backToTopBtn.style.display = 'none';
+        }
+    });
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function showSkeleton() {
+        container.innerHTML = '';
+        for(let i=0; i<8; i++) {
+            const div = document.createElement('div');
+            div.className = 'skeleton-card';
+            div.innerHTML = `
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text-sm"></div>
+                    <div class="skeleton skeleton-text-sm"></div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    // Looking For Info Modal Logic
+    function openLookingForInfoModal() {
+        document.getElementById('lookingForInfoModal').style.display = 'block';
+    }
+    function closeLookingForInfoModal() {
+        document.getElementById('lookingForInfoModal').style.display = 'none';
+    }
+
+    // Tab Logic
+    const tabBuy = document.getElementById('tab-buy');
+    const tabLookingFor = document.getElementById('tab-looking-for');
+    const requestBookContainer = document.getElementById('request-book-container');
+
+    tabBuy.addEventListener('click', () => {
+        currentTab = 'buy';
+        tabBuy.classList.add('active');
+        tabLookingFor.classList.remove('active');
+        requestBookContainer.style.display = 'none';
+        applyFilterAndSort();
+    });
+
+    tabLookingFor.addEventListener('click', () => {
+        currentTab = 'looking_for';
+        tabLookingFor.classList.add('active');
+        tabBuy.classList.remove('active');
+        requestBookContainer.style.display = 'block';
+        applyFilterAndSort();
+
+        // Show popup on first visit
+        if (!localStorage.getItem('hasSeenLookingForInfo')) {
+            openLookingForInfoModal();
+            localStorage.setItem('hasSeenLookingForInfo', 'true');
+        }
+    });
+
+    window.addEventListener('click', function(event) {
+        const lookingForInfoModal = document.getElementById('lookingForInfoModal');
+        if (event.target == lookingForInfoModal) {
+            closeLookingForInfoModal();
+        }
+    });
+
+    function openModal(bookId) {
+        const book = allBooks.find(b => b.id === bookId);
+        if(!book) return;
+
+        currentReportBookId = bookId;
+        modal.style.display = "block";
+
+        const isLookingFor = book.type === 'looking_for';
+
+        // Populate Data
+        let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+
+        modalImg.src = imgSrc;
+        modalImg.onerror = function() {
+            this.src = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
+        };
+
+        modalTitle.innerText = book.title;
+        modalAuthor.innerText = book.author && book.author !== 'Not provided' ? `By ${book.author}` : 'Unknown Author';
+        modalPrice.innerText = book.price + (book.isNegotiable ? ' (Negotiable)' : '');
+
+        modalSellerLabel.innerText = isLookingFor ? 'Buyer:' : 'Seller:';
+        modalSeller.innerText = book.seller || 'Anonymous';
+
+        modalWhatsappBtn.innerText = isLookingFor ? 'Contact Buyer on WhatsApp' : 'Contact Seller on WhatsApp';
+
+        // Date Logic
+        let dateStr = 'Unknown';
+        if (book.createdAt) {
+            dateStr = new Date(book.createdAt).toLocaleDateString();
+        } else if (book.id && book.id.startsWith('book:')) {
+             const parts = book.id.split(':');
+             if (parts.length > 1) {
+                 const sub = parts[1].split('-');
+                 const ts = parseInt(sub[0]);
+                 if (!isNaN(ts)) dateStr = new Date(ts).toLocaleDateString();
+             }
+        }
+        modalDate.innerText = dateStr;
+
+        // Campus Selection
+        const campusContainer = document.getElementById("modal-campus-container");
+        const campusSelect = document.getElementById("modal-campus-select");
+        campusSelect.innerHTML = "";
+
+        let hasCampuses = false;
+        if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+            hasCampuses = true;
+            book.campuses.forEach(campus => {
+                const opt = document.createElement("option");
+                opt.value = campus;
+                opt.innerText = campus;
+                campusSelect.appendChild(opt);
+            });
+            campusContainer.style.display = "block";
+        } else {
+            campusContainer.style.display = "none";
+        }
+
+        // WhatsApp
+        const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
+
+        if (phone) {
+             modalWhatsappBtn.href = "javascript:void(0)";
+             modalWhatsappBtn.onclick = (e) => {
+                 e.preventDefault();
+
+                 let selectedCampusMsg = "";
+                 if (hasCampuses) {
+                     const chosen = campusSelect.value;
+                     selectedCampusMsg = ` Can we meet at ${chosen}?`;
+                 }
+
+                 let message = '';
+                 if (isLookingFor) {
+                     message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}.${selectedCampusMsg} Are you still interested?`;
+                 } else {
+                     message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${window.appConfig.siteName} website.${selectedCampusMsg}`;
+                 }
+
+                 const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                 window.open(whatsappLink, '_blank');
+                 window.location.href = 'https://omg10.com/4/11276842';
+             };
+             modalWhatsappBtn.style.display = 'inline-block';
+        } else {
+             modalWhatsappBtn.style.display = 'none';
+        }
+
+        // Share Button Logic
+        modalShareBtn.onclick = () => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('book', book.id);
+            navigator.clipboard.writeText(url.toString()).then(() => {
+                showToast('Link copied to clipboard!');
+            });
+        };
+    }
+
+
+    // Report Modal Logic
+    let currentReportBookId = null;
+
+    window.openReportModal = function() {
+        if (!currentReportBookId) {
+             showToast('Error: Could not determine which book to report.');
+             return;
+        }
+        document.getElementById('reportModal').style.display = 'flex';
+    };
+
+    window.closeReportModal = function() {
+        document.getElementById('reportModal').style.display = 'none';
+        document.getElementById('report-form').reset();
+    };
+
+    document.getElementById('report-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Find current book ID
+        let bookIdToReport = currentReportBookId;
+
+        if (!bookIdToReport) {
+            showToast('Error: Could not determine which book to report.');
+            return;
+        }
+
+        const name = document.getElementById('report-name').value;
+        const phone = document.getElementById('report-phone').value;
+        const reason = document.getElementById('report-reason').value;
+
+        const btn = document.getElementById('report-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            const response = await fetch(`${WORKER_URL}report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookId: bookIdToReport,
+                    reporterName: name,
+                    reporterPhone: phone,
+                    reason: reason
+                })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                sessionStorage.setItem('adRedirectAction', 'report');
+                window.location.href = 'https://omg10.com/4/11276842';
+            } else {
+                showToast(result.error || 'Failed to submit report.');
+            }
+        } catch(err) {
+            console.error(err);
+            showToast('Network error.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Submit Report';
+        }
+    });
+
+    function closeModal() {
+
+        modal.style.display = "none";
+        // Clear param without reload
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('book')) {
+            url.searchParams.delete('book');
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    async function fetchBooks() {
+        try {
+            loadingMsg.style.display = 'none';
+            showSkeleton();
+            try {
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) throw new Error('Failed to fetch books');
+                const books = await response.json();
+                await saveBooksToDB(books);
+                allBooks = books;
+                console.log("Loaded from network");
+            } catch (networkErr) {
+                console.warn("Network failed, trying cache", networkErr);
+                const cachedBooks = await getBooksFromDB();
+                if (cachedBooks && cachedBooks.length > 0) {
+                    allBooks = cachedBooks;
+                    console.log("Loaded from cache");
+                } else {
+                    throw networkErr;
+                }
+            }
+            applyFilterAndSort();
+
+            // Check Deep Link
+            const params = new URLSearchParams(window.location.search);
+            const bookId = params.get('book');
+            if (bookId) {
+                openModal(bookId);
+            }
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '';
+            if (allBooks.length === 0) {
+                errorMsg.textContent = 'Could not load books. Please try again later.';
+                errorMsg.style.display = 'block';
+            }
+        }
+    }
+
+    function renderBooks(books) {
+        container.innerHTML = '';
+        if (books.length === 0) {
+            container.innerHTML = '<p>No books found.</p>';
+            return;
+        }
+
+        const now = Date.now();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+        books.forEach(book => {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+
+            // New Badge Logic
+            let isNew = false;
+            let ts = 0;
+            if (book.createdAt) ts = new Date(book.createdAt).getTime();
+            else if (book.id && book.id.startsWith('book:')) {
+                const parts = book.id.split(':');
+                if (parts.length > 1) {
+                    const sub = parts[1].split('-');
+                    ts = parseInt(sub[0]);
+                }
+            }
+            if (ts && (now - ts) < SEVEN_DAYS) isNew = true;
+
+            const isLookingFor = book.type === 'looking_for';
+
+            const phone = book.contact ? book.contact.replace(/\D/g, '') : '';
+            let message = '';
+            const siteName = window.appConfig ? window.appConfig.siteName : 'our';
+            if (isLookingFor) {
+                message = `Hello, I have the book you are looking for: "${book.title}" ${book.author !== 'Not provided' ? 'by ' + book.author : ''}. You listed a price range of ${book.price}. Are you still interested?`;
+            } else {
+                message = `Hello, I am interested in buying "${book.title}" by ${book.author || 'Unknown Author'} listed for ${book.price} on the ${siteName} website.`;
+            }
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappLink = phone ? `https://wa.me/${phone}?text=${encodedMessage}` : null;
+
+            let contactButtonHtml = '';
+            if (whatsappLink) {
+                contactButtonHtml = `<a href="javascript:void(0)" onclick="window.open('${whatsappLink}', '_blank'); window.location.href='https://omg10.com/4/11276842';" class="contact-btn">${isLookingFor ? 'WhatsApp Buyer' : 'WhatsApp Seller'}</a>`;
+            } else {
+                contactButtonHtml = `<span class="contact-btn">No Info</span>`;
+            }
+
+            let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+            const fallbackSrc = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
+
+            // Share Button
+            const shareBtnHtml = `
+                <button class="card-share-btn" onclick="shareBook('${book.id}', event)" title="Share Book">
+                    <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                </button>
+            `;
+
+            // New Badge HTML
+            const badgeHtml = isNew ? `<span class="badge-new">NEW</span>` : '';
+
+            let campusesStr = "Delivery: Not Specified";
+            if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+                // If there are multiple locations, format nicely. The user requested:
+                // Collection: South Campus, North Campus etc
+                // We'll strip the word "Campus" for brevity if there are many, except George etc.
+                // Actually, let's just join them as requested: "South, North, Second..."
+                let parts = book.campuses.map(c => c.replace(' Campus', '').replace('Campus', '').trim());
+                campusesStr = `Collection: ${escapeHtml(parts.join(', '))}`;
+            }
+
+            card.innerHTML = `
+                ${badgeHtml}
+                ${shareBtnHtml}
+                <img src="${imgSrc}" alt="${escapeHtml(book.title)}" class="book-image" onclick="openModal('${book.id}')" loading="lazy" onerror="this.src='${fallbackSrc}'">
+                <div class="book-details">
+                    <h2 class="book-title">${escapeHtml(book.title)}</h2>
+                    <div class="book-author">By ${escapeHtml(book.author && book.author !== 'Not provided' ? book.author : 'Unknown')}</div>
+                    <div class="book-price">${escapeHtml(book.price)} ${book.isNegotiable ? '<span>(Negotiable)</span>' : ''}</div>
+                    <div class="book-seller">${isLookingFor ? 'Buyer' : 'Seller'}: ${escapeHtml(book.seller)}</div>
+                    <div class="book-seller">${campusesStr}</div>
+                    ${contactButtonHtml}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Share Helper
+    window.shareBook = function(id, event) {
+        event.stopPropagation(); // Prevent opening modal
+        const url = new URL(window.location.href);
+        url.searchParams.set('book', id);
+        navigator.clipboard.writeText(url.toString()).then(() => {
+            showToast('Book link copied!');
+        });
+    }
+
+    const sortSelect = document.getElementById('sort-select');
+    const campusSelect = document.getElementById('campus-select');
+
+    function sortBooks() {
+        const criteria = sortSelect.value;
+        if (criteria === 'newest') {
+            allBooks.sort((a, b) => {
+                const getTimestamp = (book) => {
+                    if (book.createdAt) return new Date(book.createdAt).getTime();
+                    if (book.id && book.id.startsWith('book:')) {
+                        const parts = book.id.split(':');
+                        if (parts.length > 1) {
+                            const sub = parts[1].split('-');
+                            const ts = parseInt(sub[0]);
+                            if (!isNaN(ts)) return ts;
+                        }
+                    }
+                    return 0;
+                };
+                return getTimestamp(b) - getTimestamp(a);
+            });
+        } else if (criteria === 'a-z') {
+            allBooks.sort((a, b) => a.title.localeCompare(b.title));
+        } else if (criteria === 'z-a') {
+            allBooks.sort((a, b) => b.title.localeCompare(a.title));
+        }
+    }
+
+    function applyFilterAndSort() {
+        const query = searchInput.value.toLowerCase();
+        const selectedCampus = campusSelect.value;
+        sortBooks();
+
+        const tokens = query.split(/\s+/).filter(t => t.length > 0);
+
+        const filtered = allBooks.filter(book => {
+            // Check tab type
+            const bookType = book.type || 'buy';
+            if (bookType !== currentTab) return false;
+
+            // Check campus
+            if (selectedCampus !== 'all') {
+                if (!book.campuses || !Array.isArray(book.campuses) || !book.campuses.includes(selectedCampus)) {
+                    return false;
+                }
+            }
+
+            const title = (book.title || '').toLowerCase();
+            const seller = (book.seller || '').toLowerCase();
+            const author = (book.author || '').toLowerCase();
+
+            return tokens.every(token =>
+                title.includes(token) ||
+                seller.includes(token) ||
+                author.includes(token)
+            );
+        });
+        renderBooks(filtered);
+    }
+
+    searchInput.addEventListener('input', applyFilterAndSort);
+    sortSelect.addEventListener('change', applyFilterAndSort);
+    campusSelect.addEventListener('change', applyFilterAndSort);
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function handleFirstLaunchAndRef() {
+        // Handle ?ref=... parameter from URL silently
+        const params = new URLSearchParams(window.location.search);
+        const refParam = params.get('ref');
+
+        if (refParam) {
+            const cleanRef = refParam.toUpperCase().replace(/^AMB:/i, '');
+            // Check if it's already recorded
+            const existingRef = localStorage.getItem('dtech_ref');
+            if (existingRef !== cleanRef) {
+                localStorage.setItem('dtech_ref', cleanRef);
+                // Track install via URL silently
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: cleanRef, event: 'install' })
+                }).catch(e => console.error("Tracking error", e));
+            } else {
+                // Subsequent launches with same ref - track view silently
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: cleanRef, event: 'view' })
+                }).catch(e => console.error("Tracking error", e));
+            }
+            // Mark first launch as complete if they came via link
+            localStorage.setItem('dtech_first_launch_done', 'true');
+        } else if (!localStorage.getItem('dtech_first_launch_done')) {
+            // No link, first time opening app/site - show welcome modal
+            document.getElementById('welcome-modal').style.display = 'block';
+        } else {
+            // Subsequent launches - track view if we have a ref
+            const savedRef = localStorage.getItem('dtech_ref');
+            if (savedRef) {
+                fetch(WORKER_URL + 'track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: savedRef, event: 'view' })
+                }).catch(e => console.error("Tracking error", e));
+            }
+        }
+    }
+
+    function saveReferral() {
+        const refInput = document.getElementById('manual-ref').value.trim();
+        if (refInput) {
+            const shortCode = refInput.toUpperCase().replace(/^AMB:/i, '');
+            localStorage.setItem('dtech_ref', shortCode);
+            // Track install
+            fetch(WORKER_URL + 'track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref: shortCode, event: 'install' })
+            }).catch(e => console.error("Tracking error", e));
+        }
+        localStorage.setItem('dtech_first_launch_done', 'true');
+        document.getElementById('welcome-modal').style.display = 'none';
+        showToast('Welcome to D-TECH!');
+    }
+
+    function skipReferral() {
+        localStorage.setItem('dtech_first_launch_done', 'true');
+        document.getElementById('welcome-modal').style.display = 'none';
+        showToast('Welcome to D-TECH!');
+    }
+
+    window.appConfigPromise.then(config => {
+        WORKER_URL = config.workerUrl;
+        if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
+        fetchBooks();
+        handleFirstLaunchAndRef();
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'report') {
+                showToast('Report submitted successfully. We will review it shortly.');
+            }
+        }
+    });
+</script>
+<script src="terms-modal.js"></script>
+
+    <!-- First Launch Welcome Modal -->
+    <div id="welcome-modal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to D-TECH!</h2>
+            <p>The Student Marketplace</p>
+            <p>Were you referred by an Ambassador? Scan their QR code or enter their ID below to support them!</p>
+
+            <div id="qr-reader"></div>
+
+            <input type="text" id="manual-ref" placeholder="Enter Ambassador ID (optional)">
+            <button class="btn" onclick="saveReferral()">Continue</button>
+            <button class="btn" onclick="skipReferral()">Skip</button>
+        </div>
+    </div>
+
+</body>
+</html>
