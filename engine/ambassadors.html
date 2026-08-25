@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D-TECH Ambassador Dashboard</title>
+    <script src="config.js"></script>
+
+</head>
+<body>
+
+<header>
+    <div>
+        <img src="" alt="DTECH Logo" class="header-logo" onerror="this.src='https://via.placeholder.com/40x40?text=D'">
+        <span>AMBASSADOR</span>
+    </div>
+    <div class="header-right">
+        <span id="header-name"></span>
+        <button id="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Login Section -->
+    <div id="login-section" class="auth-card">
+        <h2>Ambassador Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email Address">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p id="login-error"></p>
+        <div class="toggle-auth" onclick="toggleAuth('register')">New Ambassador? Register Here</div>
+    </div>
+
+    <!-- Register Section -->
+    <div id="register-section" class="auth-card">
+        <h2>Ambassador Registration</h2>
+        <p>You need an Approval Key from an Admin to register.</p>
+        <input type="text" id="regKey" placeholder="Admin Approval Key">
+        <input type="text" id="regName" placeholder="Full Name">
+        <input type="email" id="regEmail" placeholder="Email Address">
+        <input type="password" id="regPassword" placeholder="Create Password">
+        <button onclick="register()">Register Account</button>
+        <p id="reg-error"></p>
+        <div class="toggle-auth" onclick="toggleAuth('login')">Already registered? Login Here</div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard-section">
+        <div class="dashboard-header">
+            <h1>Welcome, <span id="dash-name"></span></h1>
+            <span id="dash-id"></span>
+        </div>
+
+        <div class="action-card">
+            <h2>D-TECH Instant QR Share</h2>
+            <p>Share the app instantly with anyone offline or online.</p>
+            <button class="share-btn" onclick="triggerNativeShare()">Share App Now</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>App Installs</div>
+                <div class="stat-value" id="stat-installs">0</div>
+                <div>Tracked via QR & Links</div>
+            </div>
+            <div class="stat-card">
+                <div>Marketplace Views</div>
+                <div class="stat-value" id="stat-views">0</div>
+                <div>Generated traffic</div>
+            </div>
+            <div class="stat-card">
+                <div>Items Listed</div>
+                <div class="stat-value" id="stat-listings">0</div>
+                <div>By your referrals</div>
+            </div>
+            <div class="stat-card">
+                <div>Items Sold</div>
+                <div class="stat-value" id="stat-sales">0</div>
+                <div>By your referrals</div>
+            </div>
+        </div>
+
+        <h3>Your Online Referral Link</h3>
+        <div class="link-card">
+            <input type="text" id="ref-link" readonly>
+            <button onclick="copyRefLink()">Copy Link</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let workerUrl = '';
+    let ambassadorToken = localStorage.getItem('ambassadorToken');
+    let ambassadorData = JSON.parse(localStorage.getItem('ambassadorData') || 'null');
+
+    window.appConfigPromise.then(config => {
+        workerUrl = config.workerUrl;
+        checkAuth();
+    });
+
+    function toggleAuth(type) {
+        document.getElementById('login-section').style.display = type === 'login' ? 'block' : 'none';
+        document.getElementById('register-section').style.display = type === 'register' ? 'block' : 'none';
+    }
+
+    function checkAuth() {
+        if (ambassadorToken && ambassadorData) {
+            showDashboard();
+            loadStats();
+        } else {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errEl = document.getElementById('login-error');
+        errEl.style.display = 'none';
+
+        if (!email || !password) {
+            errEl.textContent = 'Please fill all fields';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch(workerUrl + 'ambassador/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('ambassadorToken', data.token);
+                localStorage.setItem('ambassadorData', JSON.stringify(data.ambassador));
+                ambassadorToken = data.token;
+                ambassadorData = data.ambassador;
+                checkAuth();
+            } else {
+                errEl.textContent = data.error || 'Login failed';
+                errEl.style.display = 'block';
+            }
+        } catch(e) {
+            errEl.textContent = 'Network error';
+            errEl.style.display = 'block';
+        }
+    }
+
+    async function register() {
+        const approvalKey = document.getElementById('regKey').value;
+        const name = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const errEl = document.getElementById('reg-error');
+        errEl.style.display = 'none';
+
+        if (!approvalKey || !name || !email || !password) {
+            errEl.textContent = 'Please fill all fields';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch(workerUrl + 'ambassador/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approvalKey, name, email, password })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert('Registration successful! Please login.');
+                toggleAuth('login');
+                document.getElementById('loginEmail').value = email;
+            } else {
+                errEl.textContent = data.error || 'Registration failed';
+                errEl.style.display = 'block';
+            }
+        } catch(e) {
+            errEl.textContent = 'Network error';
+            errEl.style.display = 'block';
+        }
+    }
+
+    function showDashboard() {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('register-section').style.display = 'none';
+        document.getElementById('dashboard-section').style.display = 'block';
+        document.getElementById('logout-btn').style.display = 'block';
+
+        document.getElementById('dash-name').textContent = ambassadorData.name;
+
+        // Extract just the shortcode (e.g., 'X9B2K1' from 'amb:X9B2K1')
+        const shortCode = ambassadorData.id.replace('amb:', '');
+        document.getElementById('dash-id').textContent = 'Referral Code: ' + shortCode;
+
+        // The URL can use the shortCode as well to look cleaner
+        const refUrl = window.location.origin + '/?ref=' + shortCode;
+        document.getElementById('ref-link').value = refUrl;
+    }
+
+    async function loadStats() {
+        try {
+            const res = await fetch(workerUrl + 'ambassador/stats', {
+                headers: { 'Authorization': 'Bearer ' + ambassadorToken }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('stat-installs').textContent = data.stats.installs || 0;
+                document.getElementById('stat-views').textContent = data.stats.views || 0;
+                document.getElementById('stat-listings').textContent = data.stats.listings || 0;
+                document.getElementById('stat-sales').textContent = data.stats.purchases || 0;
+
+                // Fetch external stats directly to avoid backend subrequest limits
+                if (ambassadorData && ambassadorData.id) {
+                    const shortCode = ambassadorData.id.replace(/amb:/i, '');
+                    fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_installs/`)
+                        .then(r => r.json())
+                        .then(d => { if(d.count !== undefined) document.getElementById('stat-installs').textContent = d.count; })
+                        .catch(()=>{});
+                    fetch(`https://api.counterapi.dev/v1/dtech_ambassadors/${shortCode}_views/`)
+                        .then(r => r.json())
+                        .then(d => { if(d.count !== undefined) document.getElementById('stat-views').textContent = d.count; })
+                        .catch(()=>{});
+                }
+            } else if (res.status === 401) {
+                logout();
+            }
+        } catch(e) {
+            console.error("Error loading stats", e);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('ambassadorToken');
+        localStorage.removeItem('ambassadorData');
+        ambassadorToken = null;
+        ambassadorData = null;
+        document.getElementById('logout-btn').style.display = 'none';
+        checkAuth();
+    }
+
+    function copyRefLink() {
+        const copyText = document.getElementById("ref-link");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("Referral Link Copied!");
+    }
+
+    function triggerNativeShare() {
+        if (window.AndroidApp && typeof window.AndroidApp.startOfflineShare === 'function') {
+            const shortCode = ambassadorData.id.replace('amb:', '');
+            window.AndroidApp.startOfflineShare(shortCode);
+        } else {
+            alert("QR Sharing is only available within the D-TECH Ambassador Android App. For now, use your referral link below.");
+        }
+    }
+</script>
+
+</body>
+</html>

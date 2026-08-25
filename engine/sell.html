@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Books - DTECH</title>
+    <script src="config.js"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+
+</head>
+<body>
+
+<header>
+    <div><a href="index.html">← Back to Home</a></div>
+    <h2>Sell Your Books</h2>
+    <div class="header-actions">
+        <button class="manual-btn" onclick="openManualModal()">User Manual</button>
+    </div>
+</header>
+
+<div class="container">
+    <form id="sell-form">
+        <div class="form-group">
+            <label for="sellerName">Your Full Name</label>
+            <input type="text" id="sellerName" required placeholder="e.g. Jane Doe">
+        </div>
+        <div class="form-group">
+            <label for="contact">WhatsApp Number</label>
+            <input type="text" id="contact" required placeholder="e.g. 0712345678">
+        </div>
+
+        <div class="form-group">
+            <label for="image">Book Image (Cover or Info Page)</label>
+            <input type="file" id="image" accept="image/*" required>
+            <img id="image-preview" alt="Preview">
+
+            <div id="ocr-section" class="ocr-container">
+                <p><strong>Extracted Text (OCR)</strong><span class="info-icon" onclick="openOcrInfoModal()">i</span></p>
+                <textarea id="ocr-result" class="ocr-text" readonly>Scanning image...</textarea>
+                <div class="ocr-actions">
+                    <button type="button" onclick="mapOcrText('title')">Set Title</button>
+                    <button type="button" onclick="mapOcrText('author')">Set Author</button>
+                    <button type="button" onclick="copyOcrText()">Copy Text</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="title">Book Title</label>
+            <input type="text" id="title" required placeholder="e.g. Introduction to Calculus">
+        </div>
+        <div class="form-group">
+            <label for="author">Author(s)</label>
+            <input type="text" id="author" required placeholder="e.g. James Stewart">
+        </div>
+        <div class="form-group">
+            <label for="price">Price (R)</label>
+            <input type="number" id="price" required placeholder="e.g. 450">
+        </div>
+
+        <div class="form-group">
+            <label>Delivery Campuses (Select all that apply)</label>
+            <div>
+                <label><input type="checkbox" name="campus" value="South Campus"> South Campus</label>
+                <label><input type="checkbox" name="campus" value="North Campus"> North Campus</label>
+                <label><input type="checkbox" name="campus" value="Second Avenue Campus"> Second Avenue Campus</label>
+                <label><input type="checkbox" name="campus" value="Missionvale Campus"> Missionvale Campus</label>
+                <label><input type="checkbox" name="campus" value="Bird Street Campus"> Bird Street Campus</label>
+                <label><input type="checkbox" name="campus" value="George Campus"> George Campus</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <input type="checkbox" id="whatsappConsent" required>
+            <label for="whatsappConsent">
+                I understand that my WhatsApp number will be visible to other registered users of this platform for the purpose of buying/selling textbooks. I can delete my listing and data at any time.
+            </label>
+        </div>
+
+        <button type="submit" id="submit-btn">Submit Book</button>
+    </form>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <h2>Upload Successful!</h2>
+        <p>Your book is now <strong>Pending Approval</strong> and will be approved in less than a few minutes.</p>
+        <p><strong>Please keep this 4-digit code safe:</strong></p>
+        <div class="code-display" id="sellerCodeDisplay">XXXX</div>
+        <p>You can use this code to manage your listings. Click the small blue icon in the top right corner of the home page to view or delete your books.</p>
+        <button class="manual-btn" onclick="openManualModal()">Read User Manual</button>
+        <button onclick="sessionStorage.setItem('adRedirectAction', 'upload'); window.location.href='https://omg10.com/4/11276842'">Back to Home</button>
+    </div>
+</div>
+
+<!-- OCR Info Modal -->
+<div id="ocrInfoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeOcrInfoModal()">&times;</span>
+        <h3>About Extracted Text</h3>
+        <p>
+            This tool automatically extracts text from your uploaded book image to save you time.
+            <br><br>
+            <strong>Note:</strong> Never blindly trust the extracted text. You should carefully review the information. Simply copy and paste only the parts that are accurate and needed for your listing.
+        </p>
+        <button onclick="closeOcrInfoModal()">Understood</button>
+    </div>
+</div>
+
+<!-- User Manual Modal -->
+<div id="manualModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeManualModal()">&times;</span>
+        <h2>User Manual</h2>
+
+        <h4>1. Your 4-Digit Code</h4>
+        <p>After successfully adding a book to sell or request, you will receive a 4-digit code. <strong>Keep this code safe!</strong> It acts as your password to manage your listings.</p>
+
+        <h4>2. Managing Your Books</h4>
+        <p>To view, delete, or add more books, navigate to the Home Page and click the <strong>small blue profile icon</strong> in the top right corner. This will take you to the Seller Management page. Enter your 4-digit code there.</p>
+
+        <h4>3. Approval Process</h4>
+        <p>All submitted listings initially go to a Pending state. An admin will review and approve your listing, usually in less than a few minutes.</p>
+
+        <button onclick="closeManualModal()">Close Manual</button>
+    </div>
+</div>
+
+<script>
+    function openManualModal() {
+        document.getElementById('manualModal').style.display = 'block';
+    }
+    function closeManualModal() {
+        document.getElementById('manualModal').style.display = 'none';
+    }
+    function openOcrInfoModal() {
+        document.getElementById('ocrInfoModal').style.display = 'block';
+    }
+    function closeOcrInfoModal() {
+        document.getElementById('ocrInfoModal').style.display = 'none';
+    }
+
+    let base64Image = null;
+    let workerUrl = '';
+
+    window.appConfigPromise.then(config => {
+        workerUrl = config.workerUrl;
+        if (!workerUrl.endsWith('/')) workerUrl += '/';
+    }).catch(err => {
+        console.error("Config load error:", err);
+        alert("System still loading or failed to load. Please refresh.");
+    });
+
+    // Image Upload & OCR
+    document.getElementById('image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            base64Image = event.target.result;
+
+            const preview = document.getElementById('image-preview');
+            preview.src = base64Image;
+            preview.style.display = 'block';
+
+            // Start OCR
+            const ocrSection = document.getElementById('ocr-section');
+            const ocrResult = document.getElementById('ocr-result');
+            ocrSection.style.display = 'block';
+            ocrResult.value = "Scanning image...";
+
+            try {
+                const result = await Tesseract.recognize(base64Image, 'eng', { logger: m => console.log(m) });
+                ocrResult.value = result.data.text;
+                ocrResult.removeAttribute('readonly'); // Allow user to manually copy
+            } catch (err) {
+                console.error(err);
+                ocrResult.value = "Failed to extract text.";
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function mapOcrText(field) {
+        const ocrText = document.getElementById('ocr-result');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        if (selectedText) {
+            document.getElementById(field).value = selectedText;
+        } else {
+            alert('Please highlight some text in the extracted text box first.');
+        }
+    }
+
+    function copyOcrText() {
+        const ocrText = document.getElementById('ocr-result');
+        const selectedText = ocrText.value.substring(ocrText.selectionStart, ocrText.selectionEnd).trim();
+        const textToCopy = selectedText || ocrText.value;
+        if (textToCopy && textToCopy !== "Scanning image..." && textToCopy !== "Failed to extract text.") {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Text copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        } else {
+            alert('No valid text to copy.');
+        }
+    }
+
+    // Submit Form
+    document.getElementById('sell-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!workerUrl) {
+            alert("System configuration not ready, please wait a moment and try again.");
+            return;
+        }
+
+        const btn = document.getElementById('submit-btn');
+        btn.textContent = 'Submitting...';
+        btn.disabled = true;
+
+        const selectedCampuses = Array.from(document.querySelectorAll('input[name="campus"]:checked')).map(cb => cb.value);
+
+        const payload = {
+                    ref: localStorage.getItem('dtech_ref') || undefined,
+            type: 'buy',
+            seller: document.getElementById('sellerName').value,
+            contact: document.getElementById('contact').value,
+            title: document.getElementById('title').value,
+            author: document.getElementById('author').value,
+            price: document.getElementById('price').value,
+            image: base64Image,
+            campuses: selectedCampuses
+        };
+
+        try {
+            const res = await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('sellerCodeDisplay').textContent = data.code;
+                document.getElementById('successModal').style.display = 'block';
+            } else {
+                alert('Error: ' + data.error);
+                btn.textContent = 'Submit Book';
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+            btn.textContent = 'Submit Book';
+            btn.disabled = false;
+        }
+    });
+
+    // Check for ad redirect action on load (in case they pressed back)
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'upload') {
+                alert('Book uploaded successfully!');
+                window.location.replace('index.html'); // Then properly go home
+            }
+        }
+    });
+</script>
+
+<footer>
+    <div>
+        <a href="javascript:void(0)" onclick="openTermsModal()">Terms of Use & Privacy Policy</a>
+    </div>
+</footer>
+
+<script src="terms-modal.js"></script>
+</body>
+</html>

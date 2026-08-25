@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Management</title>
+    <script src="config.js"></script>
+
+
+</head>
+<body>
+
+<div id="toast-container" class="toast-container"></div>
+
+<header>
+    <div><a href="index.html">← Back</a></div>
+    <div class="header-logo-container">
+        <img src="" alt="Logo" class="header-logo brand-logo">
+        <h1><span class="brand-name">Platform</span> Seller Management</h1>
+    </div>
+    <div class="header-actions">
+        <button class="manual-btn" onclick="openManualModal()">User Manual</button>
+    </div>
+</header>
+
+<!-- User Manual Modal -->
+<div id="manualModal" class="modal">
+    <div class="modal-content">
+        <span onclick="closeManualModal()">&times;</span>
+        <h2>User Manual</h2>
+
+        <h4>1. Your 4-Digit Code</h4>
+        <p>After successfully adding a book to sell or request, you will receive a 4-digit code. <strong>Keep this code safe!</strong> It acts as your password to manage your listings.</p>
+
+        <h4>2. Managing Your Books</h4>
+        <p>You are currently in the Seller Management section. Here you can see the books you are selling and the ones you requested (Looking For). You can delete items that have been sold or fulfilled.</p>
+
+        <h4>3. Approval Process</h4>
+        <p>All submitted listings initially go to a Pending state. An admin will review and approve your listing, usually in less than a few minutes. You can track this status on this page.</p>
+
+        <button onclick="closeManualModal()">Close Manual</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="login-section" class="card">
+        <h2>Enter Seller Code</h2>
+        <p>Enter the 4-letter code provided to you to manage your books.</p>
+        <form id="login-form">
+            <input type="text" id="seller-code" placeholder="CODE" maxlength="4" required>
+            <button type="submit" id="login-btn">Access My Books</button>
+        </form>
+        <div id="login-message" class="message"></div>
+    </div>
+
+    <div id="manage-section">
+        <div class="card">
+            <span>Code: <span id="display-code"></span></span>
+            <div>
+                <button onclick="deleteAccount()">Delete Account & Data</button>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+
+        <div>
+            <button id="toggle-add-btn">+ Add New Book</button>
+            <div id="add-book-section" class="card">
+                <h3>Add a New Book</h3>
+                <form id="add-book-form">
+                    <input type="file" id="new-image" accept="image/*" required>
+                    <img id="new-image-preview">
+
+                    <div id="ocr-section-new">
+                        <p><strong>Scanning image with AI...</strong></p>
+                    </div>
+
+                    <div id="validation-message-new">
+                        <strong>Action Required:</strong> Please manually validate the extracted text below. Ensure you are listing the correct book and that all details are accurate before submitting. You can edit any of the fields below.
+                        <div id="additional-info-new"></div>
+                    </div>
+
+                    <input type="text" id="new-title" placeholder="Book Title" required>
+                    <input type="text" id="new-author" placeholder="Author" required>
+                    <input type="text" id="new-editors" placeholder="Editor(s) (Optional)">
+                    <input type="text" id="new-version" placeholder="Edition/Version (Optional)">
+                    <input type="number" id="new-price" placeholder="Price (R)" required>
+                    <button type="submit" id="submit-new-btn">Submit Book</button>
+                </form>
+            </div>
+        </div>
+
+        <h2>Your Listings</h2>
+        <div id="book-list" class="book-list">
+            <!-- Books injected here -->
+        </div>
+        <p id="no-books-msg">You haven't listed any books yet.</p>
+    </div>
+</div>
+
+<!-- Campus Edit Modal -->
+<div id="campusEditModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeCampusModal()">&times;</span>
+        <h2>Update Delivery Points</h2>
+        <p>Select the campuses where you are willing to deliver this book.</p>
+
+        <form id="campus-edit-form">
+            <div>
+                <label><input type="checkbox" name="edit-campus" value="South Campus"> South Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="North Campus"> North Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Second Avenue Campus"> Second Avenue Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Missionvale Campus"> Missionvale Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="Bird Street Campus"> Bird Street Campus</label>
+                <label><input type="checkbox" name="edit-campus" value="George Campus"> George Campus</label>
+            </div>
+            <button type="submit" id="campus-save-btn">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<footer class="footer-text">
+</footer>
+
+<script>
+    function openManualModal() {
+        document.getElementById('manualModal').style.display = 'block';
+    }
+    function closeManualModal() {
+        document.getElementById('manualModal').style.display = 'none';
+    }
+
+    let WORKER_URL = '';
+    const loginForm = document.getElementById('login-form');
+    const codeInput = document.getElementById('seller-code');
+    const loginMessage = document.getElementById('login-message');
+    const loginBtn = document.getElementById('login-btn');
+
+    const loginSection = document.getElementById('login-section');
+    const manageSection = document.getElementById('manage-section');
+    const displayCode = document.getElementById('display-code');
+    const bookList = document.getElementById('book-list');
+    const noBooksMsg = document.getElementById('no-books-msg');
+    const toastContainer = document.getElementById('toast-container');
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+
+    let base64NewImage = null;
+    let sellerName = "";
+    let sellerContact = "";
+
+    document.getElementById('toggle-add-btn').addEventListener('click', function() {
+        const section = document.getElementById('add-book-section');
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            this.textContent = '- Cancel Adding';
+        } else {
+            section.style.display = 'none';
+            this.textContent = '+ Add New Book';
+        }
+    });
+
+    document.getElementById('new-image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            base64NewImage = event.target.result;
+
+            const preview = document.getElementById('new-image-preview');
+            preview.src = base64NewImage;
+            preview.style.display = 'block';
+
+            const ocrSection = document.getElementById('ocr-section-new');
+            const validationMsg = document.getElementById('validation-message-new');
+            const additionalInfoDiv = document.getElementById('additional-info-new');
+
+            ocrSection.style.display = 'block';
+            validationMsg.style.display = 'none';
+            ocrSection.innerHTML = '<p><strong>Scanning image with AI (this may take a few seconds)...</strong></p>';
+
+            if (!WORKER_URL) {
+                ocrSection.innerHTML = '<p>System not ready. Please refresh or type details manually.</p>';
+                return;
+            }
+
+            try {
+                const res = await fetch(WORKER_URL + 'extract-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64NewImage })
+                });
+
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    ocrSection.style.display = 'none';
+
+                    // Prefill fields
+                    if (data.data.title) document.getElementById('new-title').value = data.data.title;
+                    if (data.data.author) document.getElementById('new-author').value = data.data.author;
+                    if (data.data.editors) document.getElementById('new-editors').value = data.data.editors;
+                    if (data.data.version) document.getElementById('new-version').value = data.data.version;
+
+                    // Show additional info if present
+                    if (data.data.additional_info) {
+                        additionalInfoDiv.textContent = `Additional Info Extracted: ${data.data.additional_info}`;
+                    } else {
+                        additionalInfoDiv.textContent = '';
+                    }
+
+                    validationMsg.style.display = 'block';
+                } else {
+                    ocrSection.innerHTML = `<p>Failed to extract text automatically: ${data.error || 'Unknown error'}. You can type the details manually.</p>`;
+                }
+            } catch (err) {
+                console.error(err);
+                ocrSection.innerHTML = '<p>Failed to extract text automatically. You can type the details manually.</p>';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('add-book-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-new-btn');
+        btn.textContent = 'Submitting...';
+        btn.disabled = true;
+
+        const payload = {
+                    ref: localStorage.getItem('dtech_ref') || undefined,
+            type: 'buy',
+            seller: sellerName,
+            contact: sellerContact,
+            title: document.getElementById('new-title').value,
+            author: document.getElementById('new-author').value,
+            editors: document.getElementById('new-editors').value,
+            version: document.getElementById('new-version').value,
+            price: document.getElementById('new-price').value,
+            image: base64NewImage
+        };
+
+        try {
+            const res = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast('Book added and pending approval!');
+                document.getElementById('add-book-form').reset();
+                document.getElementById('new-image-preview').style.display = 'none';
+                document.getElementById('ocr-section-new').style.display = 'none';
+                document.getElementById('add-book-section').style.display = 'none';
+                document.getElementById('toggle-add-btn').textContent = '+ Add New Book';
+                loadBooks(sessionStorage.getItem('sellerCode'));
+            } else {
+                showToast('Error: ' + data.error);
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        } finally {
+            btn.textContent = 'Submit Book';
+            btn.disabled = false;
+        }
+    });
+
+
+    // Check session
+    const savedCode = sessionStorage.getItem('sellerCode');
+    if (savedCode) {
+        codeInput.value = savedCode;
+        loadBooks(savedCode);
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = codeInput.value.toUpperCase().trim();
+        if (code.length < 4) {
+            showMessage('Invalid code format.', 'error');
+            return;
+        }
+        await loadBooks(code);
+    });
+
+    async function loadBooks(code) {
+        loginBtn.textContent = 'Verifying...';
+        loginBtn.disabled = true;
+        loginMessage.style.display = 'none';
+
+        try {
+            const response = await fetch(`${WORKER_URL}seller/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem('sellerCode', code);
+                displayCode.textContent = code;
+
+                // Extract name and contact from first book for adding new books
+                if (data.length > 0) {
+                    sellerName = data[0].seller || "Anonymous";
+                    sellerContact = data[0].contact || "";
+                }
+
+                renderBooks(data);
+
+                loginSection.style.display = 'none';
+                manageSection.style.display = 'block';
+            } else {
+                showMessage(data.error || 'Invalid code.', 'error');
+                sessionStorage.removeItem('sellerCode');
+            }
+        } catch (err) {
+            console.error(err);
+            showMessage('Network error. Please try again.', 'error');
+        } finally {
+            loginBtn.textContent = 'Access My Books';
+            loginBtn.disabled = false;
+        }
+    }
+
+    function renderBooks(books) {
+        bookList.innerHTML = '';
+        if (!books || books.length === 0) {
+            noBooksMsg.style.display = 'block';
+            return;
+        }
+        noBooksMsg.style.display = 'none';
+
+        books.forEach(book => {
+            const item = document.createElement('div');
+            item.className = 'book-item';
+
+            const isLookingFor = book.type === 'looking_for';
+            const typeBadge = isLookingFor
+                ? '<span>LOOKING FOR</span>'
+                : '<span>SELLING</span>';
+            const statusBadge = book.status === 'pending'
+                ? '<span>PENDING</span>'
+                : '<span>ACTIVE</span>';
+
+            // Image fallback logic
+            let imgSrc = book.image ? book.image : `${WORKER_URL}image?id=${book.id}`;
+            const fallbackSrc = isLookingFor
+                ? 'https://via.placeholder.com/300x400?text=Looking+For+Book'
+                : 'https://via.placeholder.com/300x400?text=No+Cover';
+
+            let campusesStr = "Delivery: Not Specified";
+            if (book.campuses && Array.isArray(book.campuses) && book.campuses.length > 0) {
+                let parts = book.campuses.map(c => c.replace(' Campus', '').replace('Campus', '').trim());
+                campusesStr = `Collection: ${parts.join(', ')}`;
+            }
+
+            item.innerHTML = `
+                <img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.src='${fallbackSrc}'">
+                <div class="book-info">
+                    <div class="book-title">${typeBadge} ${book.title}</div>
+                    <div>${statusBadge}</div>
+                    <div class="book-price">${book.price}</div>
+                    <div>${campusesStr}</div>
+                </div>
+                <div>
+                    <button class="manual-btn" onclick="openCampusModal('${book.id}')">Update Delivery</button>
+                    <button class="delete-btn" onclick="deleteBook('${book.id}')">Delete</button>
+                </div>
+            `;
+            bookList.appendChild(item);
+        });
+    }
+
+    let currentEditCampusBookId = null;
+
+    window.openCampusModal = function(id) {
+        currentEditCampusBookId = id;
+        document.getElementById('campusEditModal').style.display = 'flex';
+        // Uncheck all first
+        const checkboxes = document.querySelectorAll('input[name="edit-campus"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    };
+
+    window.closeCampusModal = function() {
+        document.getElementById('campusEditModal').style.display = 'none';
+        currentEditCampusBookId = null;
+    };
+
+    document.getElementById('campus-edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!currentEditCampusBookId) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            showToast('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        const selectedCampuses = Array.from(document.querySelectorAll('input[name="edit-campus"]:checked')).map(cb => cb.value);
+
+        const btn = document.getElementById('campus-save-btn');
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`${WORKER_URL}update-campuses?id=${currentEditCampusBookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Seller-Code': code
+                },
+                body: JSON.stringify({ campuses: selectedCampuses })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Delivery points updated successfully.');
+                closeCampusModal();
+                loadBooks(code);
+            } else {
+                showToast(result.error || 'Failed to update delivery points.');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        } finally {
+            btn.textContent = 'Save Changes';
+            btn.disabled = false;
+        }
+    });
+
+    window.deleteBook = async function(id) {
+        if (!confirm('Are you sure you want to remove this book? This action cannot be undone.')) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            showToast('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WORKER_URL}?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Seller-Code': code
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem('adRedirectAction', 'delete');
+                window.location.href = 'https://omg10.com/4/11276842';
+            } else {
+                showToast(result.error || 'Failed to delete book.');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        }
+    };
+
+    window.deleteAccount = async function() {
+        if (!confirm('Are you ABSOLUTELY sure you want to delete your account? This will permanently delete ALL your listings and your personal data from our systems. This action CANNOT be undone.')) return;
+
+        const code = sessionStorage.getItem('sellerCode');
+        if (!code) {
+            showToast('Session expired. Please log in again.');
+            logout();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WORKER_URL}seller/account`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Seller-Code': code
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem('adRedirectAction', 'delete_account');
+                window.location.href = 'https://omg10.com/4/11276842';
+            } else {
+                showToast(result.error || 'Failed to delete account.');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error.');
+        }
+    };
+
+    window.logout = function() {
+        sessionStorage.removeItem('sellerCode');
+        manageSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        codeInput.value = '';
+        loginMessage.style.display = 'none';
+    };
+
+    function showMessage(text, type) {
+        loginMessage.textContent = text;
+        loginMessage.className = `message ${type}`;
+        loginMessage.style.display = 'block';
+    }
+
+    window.appConfigPromise.then(config => {
+        WORKER_URL = config.workerUrl;
+        if (!WORKER_URL.endsWith('/')) WORKER_URL += '/';
+
+        if (sessionStorage.getItem('sellerCode')) {
+             loadBooks(sessionStorage.getItem('sellerCode'));
+        }
+    }).catch(err => {
+        console.error("Config load error:", err);
+        showToast("System configuration failed to load.");
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        const adAction = sessionStorage.getItem('adRedirectAction');
+        if (adAction) {
+            sessionStorage.removeItem('adRedirectAction');
+            if (adAction === 'delete') {
+                showToast('Book deleted successfully');
+                const storedCode = sessionStorage.getItem('sellerCode');
+                if (storedCode) loadBooks(storedCode);
+            } else if (adAction === 'delete_account') {
+                showToast('Your account and all data have been deleted successfully.');
+                logout();
+            }
+        }
+    });
+</script>
+
+<script src="terms-modal.js"></script>
+</body>
+</html>
